@@ -1,0 +1,9 @@
+{
+    "name": "TemplarSkins",
+    "version_number": "1.0.0",
+    "website_url": "https://github.com/prodzpod/TemplarSkins",
+    "description": "A simple reskin mod for The Most Playable Templar.",
+    "dependencies": [
+        "TemplarBoyz-PlayableTemplar-1.1.1"
+    ]
+}
