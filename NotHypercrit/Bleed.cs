@@ -86,7 +86,7 @@ namespace NotHypercrit
                         {
                             CharacterBody self = info.attacker.GetComponent<CharacterBody>();
                             if (!self) return;
-                            InflictHyperbleedInfo aci = RollHyperbleed(DotController.DotIndex.Bleed, self.GetBleedDamage() - 1f, self, false);
+                            InflictHyperbleedInfo aci = RollHyperbleed(DotController.DotIndex.Bleed, self.GetBleedDamage() - 1f, self);
                             inflictHyperBleedInfos.Add(aci);
                         }
                     });
@@ -105,7 +105,7 @@ namespace NotHypercrit
                         {
                             CharacterBody self = info.attacker.GetComponent<CharacterBody>();
                             if (!self) return;
-                            InflictHyperbleedInfo aci = RollHyperbleed(DotController.DotIndex.Fracture, self.GetCollapseDamage() - 1f, self, true);
+                            InflictHyperbleedInfo aci = RollHyperbleed(DotController.DotIndex.Fracture, self.GetCollapseDamage() - 1f, self);
                             inflictHyperBleedInfos.Add(aci);
                         }
                     });
@@ -153,8 +153,8 @@ namespace NotHypercrit
                         if (attacker && victim)
                         {
                             // weird spawndamagenumber variant!!
-                            float mult = msg.damage / (victim.GetBuffCount(RoR2Content.Buffs.Bleeding) * 0.2f * attacker.baseDamage) / NotHypercritPlugin.Calc(NotHypercritPlugin.BleedStackMode.Value, NotHypercritPlugin.BleedStackBase.Value, NotHypercritPlugin.BleedStackMult.Value, NotHypercritPlugin.BleedStackDecay.Value, victim.GetBuffCount(RoR2Content.Buffs.Bleeding));
-                            float stack = GetInverseDamage(mult); // yeah
+                            float mult = msg.damage / (victim.GetBuffCount(RoR2Content.Buffs.Bleeding) * 0.2f * attacker.baseDamage);
+                            float stack = GetInverseDamage(mult / NotHypercritPlugin.Calc(NotHypercritPlugin.BleedStackMode.Value, NotHypercritPlugin.BleedStackBase.Value, NotHypercritPlugin.BleedStackMult.Value, NotHypercritPlugin.BleedStackDecay.Value, victim.GetBuffCount(RoR2Content.Buffs.Bleeding) + 1)); // yeah
                             if (mult > 0 && stack > 0)
                             {
                                 float v = (stack - 1) % NotHypercritPlugin.BleedColor.Value / (NotHypercritPlugin.BleedColor.Value - 1);
@@ -184,14 +184,14 @@ namespace NotHypercrit
                     var dotIndex = info.dotIndex;
                     if (attacker)
                     {
-                        if ((info.dotIndex == DotController.DotIndex.Bleed && NotHypercritPlugin.BleedEnable.Value) || (info.dotIndex == DotController.DotIndex.Fracture && NotHypercritPlugin.CollapseEnable.Value)) info.damageMultiplier *= HyperbleedMultiplier(attacker, dotIndex);
+                        if ((dotIndex == DotController.DotIndex.Bleed && NotHypercritPlugin.BleedEnable.Value) || (dotIndex == DotController.DotIndex.Fracture && NotHypercritPlugin.CollapseEnable.Value)) info.damageMultiplier *= HyperbleedMultiplier(attacker, dotIndex);
                         if (info.victimObject != null)
                         {
                             var victim = info.victimObject.GetComponent<CharacterBody>();
                             if (victim != null)
                             {
-                                if (info.dotIndex == DotController.DotIndex.Bleed) info.damageMultiplier *= NotHypercritPlugin.Calc(NotHypercritPlugin.BleedStackMode.Value, NotHypercritPlugin.BleedStackBase.Value, NotHypercritPlugin.BleedStackMult.Value, NotHypercritPlugin.BleedStackDecay.Value, victim.GetBuffCount(RoR2Content.Buffs.Bleeding));
-                                else if (info.dotIndex == DotController.DotIndex.Fracture) info.damageMultiplier *= NotHypercritPlugin.Calc(NotHypercritPlugin.CollapseStackMode.Value, NotHypercritPlugin.CollapseStackBase.Value, NotHypercritPlugin.CollapseStackMult.Value, NotHypercritPlugin.CollapseStackDecay.Value, victim.GetBuffCount(DLC1Content.Buffs.Fracture));
+                                if (info.dotIndex == DotController.DotIndex.Bleed) info.damageMultiplier *= NotHypercritPlugin.Calc(NotHypercritPlugin.BleedStackMode.Value, NotHypercritPlugin.BleedStackBase.Value, NotHypercritPlugin.BleedStackMult.Value, NotHypercritPlugin.BleedStackDecay.Value, victim.GetBuffCount(RoR2Content.Buffs.Bleeding) + 1);
+                                else if (info.dotIndex == DotController.DotIndex.Fracture) info.damageMultiplier *= NotHypercritPlugin.Calc(NotHypercritPlugin.CollapseStackMode.Value, NotHypercritPlugin.CollapseStackBase.Value, NotHypercritPlugin.CollapseStackMult.Value, NotHypercritPlugin.CollapseStackDecay.Value, victim.GetBuffCount(DLC1Content.Buffs.Fracture) + 1);
                             }
                         }
                     }
@@ -254,7 +254,7 @@ namespace NotHypercrit
                 aci.dotIndex = dotIndex;
                 aci.totalChance = body.bleedChance;
                 float effectiveCount = GetEffectiveCount(body.bleedChance, body, dotIndex == DotController.DotIndex.Fracture, forceSingleBleed);
-                aci.num = (dotIndex == DotController.DotIndex.Bleed ? NotHypercritPlugin.BleedFraction.Value : NotHypercritPlugin.CollapseFraction.Value) ? (int)effectiveCount : (Mathf.FloorToInt(effectiveCount) + (Util.CheckRoll(effectiveCount % 1f, body.master) ? 1 : 0));
+                aci.num = (dotIndex == DotController.DotIndex.Bleed ? NotHypercritPlugin.BleedFraction.Value : NotHypercritPlugin.CollapseFraction.Value) ? (int)effectiveCount : (Mathf.FloorToInt(effectiveCount) + (Util.CheckRoll(effectiveCount % 1f * 100, body.master) ? 1 : 0));
                 if (aci.num == 0) aci.damageMult = 1f;
                 else
                 {
@@ -325,7 +325,7 @@ namespace NotHypercrit
             if ((collapse ? NotHypercritPlugin.CollapseCap.Value : NotHypercritPlugin.BleedCap.Value) >= 0) ret = Mathf.Min(ret, collapse ? NotHypercritPlugin.CollapseCap.Value : NotHypercritPlugin.BleedCap.Value);
             if (((NotHypercritPlugin.BleedFraction.Value && !collapse) || (NotHypercritPlugin.CollapseFraction.Value && collapse)) && NotHypercritPlugin.Mods("com.themysticsword.mysticsitems") && body?.inventory != null && ret > 0) ret += 0.01f * body.inventory.GetItemCount(ItemCatalog.FindItemIndex("MysticsItems_ScratchTicket"));
             if (ret <= 0) return 0;
-            if (!(collapse ? NotHypercritPlugin.CollapseFraction.Value : NotHypercritPlugin.BleedFraction.Value)) return Mathf.FloorToInt(ret) + (Util.CheckRoll(ret % 1f, body.master) ? 1 : 0);
+            if (!(collapse ? NotHypercritPlugin.CollapseFraction.Value : NotHypercritPlugin.BleedFraction.Value)) return Mathf.FloorToInt(ret) + (Util.CheckRoll(ret % 1f * 100, body.master) ? 1 : 0);
             return ret;
         }
 

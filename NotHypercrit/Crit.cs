@@ -37,7 +37,7 @@ namespace NotHypercrit
                         NotHypercritPlugin.AdditionalProcInfo aci = null;
                         if (!critInfoAttachments.TryGetValue(info, out aci))
                         {
-                            aci = RollHypercrit(orig - 2f, self, true);
+                            aci = RollHypercrit(orig - 2f, self);
                             critInfoAttachments.Add(info, aci);
                         }
                         info.crit = aci.num > 0;
@@ -192,7 +192,7 @@ namespace NotHypercrit
             {
                 aci.totalChance = body.crit;
                 float effectiveCount = GetEffectiveCount(body.crit, body, forceSingleCrit);
-                aci.num = NotHypercritPlugin.CritFraction.Value ? (int)effectiveCount : (Mathf.FloorToInt(effectiveCount) + (Util.CheckRoll(effectiveCount % 1f, body.master) ? 1 : 0));
+                aci.num = NotHypercritPlugin.CritFraction.Value ? (int)effectiveCount : (Mathf.FloorToInt(effectiveCount) + (Util.CheckRoll(effectiveCount % 1f * 100, body.master) ? 1 : 0));
                 if (aci.num == 0) aci.damageMult = 1f;
                 else aci.damageMult = NotHypercritPlugin.Calc(
                     NotHypercritPlugin.CritMode.Value, 
@@ -239,7 +239,7 @@ namespace NotHypercrit
             if (NotHypercritPlugin.CritCap.Value >= 0) ret = Mathf.Min(ret, NotHypercritPlugin.CritCap.Value);
             if (NotHypercritPlugin.CritFraction.Value && NotHypercritPlugin.Mods("com.themysticsword.mysticsitems") && body?.inventory != null && ret > 0) ret += 0.01f * body.inventory.GetItemCount(ItemCatalog.FindItemIndex("MysticsItems_ScratchTicket"));
             if (ret <= 0) return 0;
-            if (!NotHypercritPlugin.CritFraction.Value) return Mathf.FloorToInt(ret) + (Util.CheckRoll(ret % 1f, body.master) ? 1 : 0);
+            if (!NotHypercritPlugin.CritFraction.Value) return Mathf.FloorToInt(ret) + (Util.CheckRoll(ret % 1f * 100, body.master) ? 1 : 0);
             return ret;
         }
     }

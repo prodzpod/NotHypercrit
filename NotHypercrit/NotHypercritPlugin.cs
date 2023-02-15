@@ -22,7 +22,7 @@ namespace NotHypercrit
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "prodzpod";
         public const string PluginName = "Hypercrit2";
-        public const string PluginVersion = "1.1.1";
+        public const string PluginVersion = "1.1.2";
         public static ManualLogSource Log;
         internal static PluginInfo pluginInfo;
         public static ConfigFile Config;
@@ -148,7 +148,7 @@ namespace NotHypercrit
             BleedStackDecay = Config.Bind("Hyperbleed 2", "Stack Decay", 1f, "refer to hyperbleed stack mode");
             BleedStackMode = Config.Bind("Hyperbleed 2", "Stack Mode", CritStackingMode.Linear, "Linear: Base + (Mult*(Count - 1)), Exponential: Base * Pow(Mult, Count - 1), Hyperbolic: Base + (Mult - Mult / (1 + ((Decay / Mult) / (1 - (Decay / Mult))) * Count)) Asymtotic: Base + Mult * (1 - 2 ^ (-Count / Decay))");
 
-            CollapseEnable = Config.Bind("Hypercollapse 2", "Enable Collapse", true, "Enables hypercollapse for collapse.");
+            CollapseEnable = Config.Bind("Hypercollapse 2", "Enable Collapse", true, "Enables hypercollapse.");
             CollapseCap = Config.Bind("Hypercollapse 2", "Collapse Cap", -1f, "Maximum number of collapse chance. set to -1 to uncap.");
             CollapseBase = Config.Bind("Hypercollapse 2", "Initial Multiplier", 1f, "yeah");
             CollapseMult = Config.Bind("Hypercollapse 2", "Value", 1f, "refer to hypercollapse mode");
