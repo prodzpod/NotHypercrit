@@ -7,6 +7,7 @@ This is a rewrite/continuation of [Hypercrit by Thinkinvis](https://thunderstore
 ## Changes from the original
 
 - Hypercrit
+    - Hyperbolic Scaling: Just like Hopoo intended...
     - Proc config: "On-crit" effects apply multiple times on Hypercrit. Configurable.
     - Fractional Crit Damage Increase: instead of damage increasing every 100%, all percentage past 100% is counted partially, similar to original hyperbleed.
     - [BetterUI](https://thunderstore.io/package/XoXFaby/BetterUI/) support: adds `$hypercrit` that shows total current damage multiplier.
@@ -29,5 +30,10 @@ This is a rewrite/continuation of [Hypercrit by Thinkinvis](https://thunderstore
 ## BTW
 The code is under GPL3, since the original hypercrit was.
 
-also I did get permission from mystic btw
+also I did get permission from mystic btw  
 ![Image](https://cdn.discordapp.com/attachments/515678914316861451/1075218747457019984/image.png)
+
+## Changelog
+- 1.1.1: Added changelog, The Ultimate README Update Of All Time
+- 1.1.0: Added hyperbolic scaling, every bleed/collapse related changes, fractional scaling, configurable decay
+- 1.0.0: Initial Commit
