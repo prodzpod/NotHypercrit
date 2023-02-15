@@ -27,7 +27,7 @@ namespace NotHypercrit
                     x => x.MatchBrfalse(out _),
                     x => x.MatchLdloc(out _),
                     x => x.MatchLdloc(1),
-                    x => x.MatchCallOrCallvirt<CharacterBody>("get_critMultiplier")) && damageInfoIndex != -1)
+                    x => x.MatchCallOrCallvirt<CharacterBody>("get_" + nameof(CharacterBody.critMultiplier))) && damageInfoIndex != -1)
                 {
                     c.Emit(OpCodes.Ldloc_1);
                     c.Emit(OpCodes.Ldarg, damageInfoIndex);
@@ -37,11 +37,11 @@ namespace NotHypercrit
                         NotHypercritPlugin.AdditionalProcInfo aci = null;
                         if (!critInfoAttachments.TryGetValue(info, out aci))
                         {
-                            aci = RollHypercrit(orig - 2f, self);
+                            aci = RollHypercrit(orig - 2f, self, true);
                             critInfoAttachments.Add(info, aci);
                         }
                         info.crit = aci.num > 0;
-                        return aci.damageMult;
+                        return orig + aci.damageMult;
                     });
                 }
             };
@@ -87,6 +87,7 @@ namespace NotHypercrit
                     var aci = lastNetworkedCritInfo;
                     lastNetworkedCritInfo = null;
                     float effectiveCount = GetEffectiveCount(aci);
+                    if (NotHypercritPlugin.CritFraction.Value) effectiveCount += 1;
                     if (effectiveCount == 0) return origColor;
                     float h = 1f / 6f - (effectiveCount - 1f) / NotHypercritPlugin.CritColor.Value;
                     return Color.HSVToRGB(((h % 1f) + 1f) % 1f, 1f, 1f);
