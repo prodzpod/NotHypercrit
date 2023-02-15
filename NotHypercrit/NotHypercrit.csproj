@@ -67,12 +67,18 @@
 	  <Reference Include="UnityEngine.CoreModule">
 	    <HintPath>libs\UnityEngine.CoreModule-nstrip.dll</HintPath>
 	  </Reference>
+	  <Reference Include="UnityEngine.ParticleSystemModule">
+	    <HintPath>libs\UnityEngine.ParticleSystemModule-nstrip.dll</HintPath>
+	  </Reference>
 	</ItemGroup>
-
-	<ItemGroup>
-		<None Update="Lang\en.language">
+	
+	  <ItemGroup>
+		<None Update="manifest.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
-	</ItemGroup>
+		<None Update="../README.md">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+	  </ItemGroup>
 
 </Project>

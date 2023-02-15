@@ -2,15 +2,9 @@
 using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using BepInEx.Logging;
-using Mono.Cecil.Cil;
-using MonoMod.Cil;
-using R2API;
 using R2API.Utils;
 using RoR2;
-using RoR2.Orbs;
-using System;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -22,48 +16,93 @@ namespace NotHypercrit
     [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod)]
     [BepInDependency("com.xoxfaby.BetterUI", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.themysticsword.mysticsitems", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("Hayaku.VanillaRebalance", BepInDependency.DependencyFlags.SoftDependency)]
     public class NotHypercritPlugin : BaseUnityPlugin
     {
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "prodzpod";
         public const string PluginName = "Hypercrit2";
-        public const string PluginVersion = "1.0.0";
+        public const string PluginVersion = "1.1.0";
         public static ManualLogSource Log;
         internal static PluginInfo pluginInfo;
         public static ConfigFile Config;
-        public enum CritStackingMode { Linear, Exponential, Asymptotic };
 
-        public static ConfigEntry<int> Cap;
-        public static ConfigEntry<float> Base;
-        public static ConfigEntry<float> Mult;
-        public static ConfigEntry<CritStackingMode> Mode;
-        public static ConfigEntry<bool> DamageBonus;
-        public static ConfigEntry<int> Moonglasses;
-        public static ConfigEntry<float> ProcBase;
-        public static ConfigEntry<float> ProcMult;
-        public static ConfigEntry<CritStackingMode> ProcMode;
+        public enum CritStackingMode { Linear, Exponential, Hyperbolic, Asymptotic };
+
+        public static ConfigEntry<bool> CritEnable;
+        public static ConfigEntry<float> CritCap;
+        public static ConfigEntry<float> CritBase;
+        public static ConfigEntry<float> CritMult;
+        public static ConfigEntry<float> CritDecay;
+        public static ConfigEntry<CritStackingMode> CritMode;
+        public static ConfigEntry<bool> CritFraction;
+        public static ConfigEntry<bool> CritDamageBonus;
+        public static ConfigEntry<float> CritProcBase;
+        public static ConfigEntry<float> CritProcMult;
+        public static ConfigEntry<float> CritProcDecay;
+        public static ConfigEntry<CritStackingMode> CritProcMode;
+        public static ConfigEntry<int> CritColor;
+
         public static ConfigEntry<bool> Flurry;
-        public static ConfigEntry<int> Color;
+        public static ConfigEntry<int> Moonglasses;
 
-        public readonly ConditionalWeakTable<object, AdditionalCritInfo> critInfoAttachments = new ConditionalWeakTable<object, AdditionalCritInfo>();
-        public static AdditionalCritInfo lastNetworkedCritInfo = null;
-        public class AdditionalCritInfo : R2API.Networking.Interfaces.ISerializableObject
+        public static ConfigEntry<bool> BleedEnable;
+        public static ConfigEntry<float> BleedCap;
+        public static ConfigEntry<float> BleedBase;
+        public static ConfigEntry<float> BleedMult;
+        public static ConfigEntry<float> BleedDecay;
+        public static ConfigEntry<CritStackingMode> BleedMode;
+        public static ConfigEntry<bool> BleedFraction;
+        public static ConfigEntry<bool> BleedDamageBonus;
+        public static ConfigEntry<float> BleedProcBase;
+        public static ConfigEntry<float> BleedProcMult;
+        public static ConfigEntry<float> BleedProcDecay;
+        public static ConfigEntry<CritStackingMode> BleedProcMode;
+        public static ConfigEntry<int> BleedColor;
+        public static ConfigEntry<float> BleedStackBase;
+        public static ConfigEntry<float> BleedStackMult;
+        public static ConfigEntry<float> BleedStackDecay;
+        public static ConfigEntry<CritStackingMode> BleedStackMode;
+
+        public static ConfigEntry<bool> CollapseEnable;
+        public static ConfigEntry<float> CollapseCap;
+        public static ConfigEntry<float> CollapseBase;
+        public static ConfigEntry<float> CollapseMult;
+        public static ConfigEntry<float> CollapseDecay;
+        public static ConfigEntry<CritStackingMode> CollapseMode;
+        public static ConfigEntry<bool> CollapseFraction;
+        public static ConfigEntry<bool> CollapseDamageBonus;
+        public static ConfigEntry<float> CollapseProcBase;
+        public static ConfigEntry<float> CollapseProcMult;
+        public static ConfigEntry<float> CollapseProcDecay;
+        public static ConfigEntry<CritStackingMode> CollapseProcMode;
+        public static ConfigEntry<float> CollapseStackBase;
+        public static ConfigEntry<float> CollapseStackMult;
+        public static ConfigEntry<float> CollapseStackDecay;
+        public static ConfigEntry<CritStackingMode> CollapseStackMode;
+
+        public static ConfigEntry<bool> HyperbolicCrit;
+        public static ConfigEntry<bool> HyperbolicBleed;
+        public static ConfigEntry<bool> HyperbolicCollapse;
+        public static ConfigEntry<bool> LamerShatterspleen;
+
+        public class AdditionalProcInfo : R2API.Networking.Interfaces.ISerializableObject
         {
-            public float totalCritChance = 0f;
-            public int numCrits = 0;
+            public float totalChance = 0f;
+            public int num = 0;
             public float damageMult = 1f;
             public int numProcs = 0;
             public void Deserialize(NetworkReader reader)
             {
-                totalCritChance = reader.ReadSingle();
-                numCrits = reader.ReadInt32();
+                totalChance = reader.ReadSingle();
+                num = reader.ReadInt32();
                 numProcs = reader.ReadInt32();
                 damageMult = reader.ReadSingle();
             }
             public void Serialize(NetworkWriter writer)
             {
-                writer.Write(totalCritChance);
-                writer.Write(numCrits);
+                writer.Write(totalChance);
+                writer.Write(num);
                 writer.Write(numProcs);
                 writer.Write(damageMult);
             }
@@ -74,167 +113,70 @@ namespace NotHypercrit
             pluginInfo = Info;
             Log = Logger;
             Config = new ConfigFile(System.IO.Path.Combine(Paths.ConfigPath, PluginGUID + ".cfg"), true);
-            Cap = Config.Bind("Hypercrit 2", "Crit Cap", -1, "Maximum number of crits. set to -1 to uncap.");
-            Base = Config.Bind("Hypercrit 2", "Initial Multiplier", 2f, "yeah");
-            Mult = Config.Bind("Hypercrit 2", "Value", 1f, "refer to hypercrit mode");
-            Mode = Config.Bind("Hypercrit 2", "Mode", CritStackingMode.Linear, "Linear: Base + (Mult*(Count - 1)), Exponential: Base * Pow(Mult, Count - 1), Asymtotic: Base + Mult * (1 - 2 ^ (-Count))");
-            DamageBonus = Config.Bind("Hypercrit 2", "Crit Damage Affects Hypercrit", true, "please turn off for asymptotic");
-            Moonglasses = Config.Bind("Hypercrit 2", "Moonglasses Rework", 100, "makes it so moonglasses reduces crit chance. actual downside?? set to 0 to disable.");
-            ProcBase = Config.Bind("Hypercrit 2", "Initial Proc", 1f, "value for proc");
-            ProcMult = Config.Bind("Hypercrit 2", "Proc Value", 1f, "value for proc");
-            ProcMode = Config.Bind("Hypercrit 2", "Proc Mode", CritStackingMode.Linear, "mode for proc, HIGHLY do not recommend exponential PLEASE");
-            Flurry = Config.Bind("Hypercrit 2", "Procs Affects Flurry", true, "yeah!!");
-            Color = Config.Bind("Hypercrit 2", "Color", 12, "Set to 1 to disable color change");
+            CritEnable = Config.Bind("Hypercrit 2", "Enable", true, "Enables hypercrit.");
+            CritCap = Config.Bind("Hypercrit 2", "Crit Cap", -1f, "Maximum number of crits. set to -1 to uncap.");
+            CritBase = Config.Bind("Hypercrit 2", "Initial Multiplier", 2f, "yeah");
+            CritMult = Config.Bind("Hypercrit 2", "Value", 1f, "refer to hypercrit mode");
+            CritDecay = Config.Bind("Hypercrit 2", "Decay", 1f, "refer to hypercrit mode");
+            CritMode = Config.Bind("Hypercrit 2", "Mode", CritStackingMode.Linear, "Linear: Base + (Mult*(Count - 1)), Exponential: Base * Pow(Mult, Count - 1), Hyperbolic: Base + (Mult - Mult / (1 + ((Decay / Mult) / (1 - (Decay / Mult))) * Count)) Asymtotic: Base + Mult * (1 - 2 ^ (-Count / Decay))");
+            CritFraction = Config.Bind("Hypercrit 2", "Fraction Multiplier", false, "Whether fractional crit chance should contribute instead of in 100% increments.");
+            CritDamageBonus = Config.Bind("Hypercrit 2", "Crit Damage Affects Hypercrit", true, "please turn off for asymptotic");
+            CritProcBase = Config.Bind("Hypercrit 2", "Initial Proc", 1f, "value for proc");
+            CritProcMult = Config.Bind("Hypercrit 2", "Proc Value", 1f, "value for proc");
+            CritProcDecay = Config.Bind("Hypercrit 2", "Proc Decay", 1f, "refer to hypercrit mode");
+            CritProcMode = Config.Bind("Hypercrit 2", "Proc Mode", CritStackingMode.Linear, "mode for proc, HIGHLY do not recommend exponential PLEASE");
+            CritColor = Config.Bind("Hypercrit 2", "Color Cycle", 12, "Set to 1 to disable color change");
 
-            Log.LogDebug("The Spirit of ThinkInvis Embraces You...");
+            Flurry = Config.Bind("Hypercrit 2", "Procs Affects Flurry", true, "yeah!!");
+            Moonglasses = Config.Bind("Hypercrit 2", "Moonglasses Rework", 100, "makes it so moonglasses reduces crit chance. actual downside?? set to 0 to disable.");
+
+            BleedEnable = Config.Bind("Hyperbleed 2", "Enable", true, "Enables hyperbleed.");
+            BleedCap = Config.Bind("Hyperbleed 2", "Bleed Cap", -1f, "Maximum number of bleed chance. set to -1 to uncap.");
+            BleedBase = Config.Bind("Hyperbleed 2", "Initial Multiplier", 1f, "yeah");
+            BleedMult = Config.Bind("Hyperbleed 2", "Value", 1f, "refer to hyperbleed mode");
+            BleedDecay = Config.Bind("Hyperbleed 2", "Decay", 1f, "refer to hyperbleed mode");
+            BleedMode = Config.Bind("Hyperbleed 2", "Mode", CritStackingMode.Linear, "Linear: Base + (Mult*(Count - 1)), Exponential: Base * Pow(Mult, Count - 1), Hyperbolic: Base + (Mult - Mult / (1 + ((Decay / Mult) / (1 - (Decay / Mult))) * Count)) Asymtotic: Base + Mult * (1 - 2 ^ (-Count / Decay))");
+            BleedFraction = Config.Bind("Hyperbleed 2", "Fraction Multiplier", true, "Whether fractional bleed chance should contribute to damage instead of in 100% increments.");
+            BleedDamageBonus = Config.Bind("Hyperbleed 2", "Bleed Damage Affects Hyperbleed", true, "please turn off for asymptotic");
+            BleedProcBase = Config.Bind("Hyperbleed 2", "Initial Proc", 1f, "value for proc");
+            BleedProcMult = Config.Bind("Hyperbleed 2", "Proc Value", 1f, "value for proc");
+            BleedProcDecay = Config.Bind("Hyperbleed 2", "Proc Decay", 1f, "refer to hyperbleed mode");
+            BleedProcMode = Config.Bind("Hyperbleed 2", "Proc Mode", CritStackingMode.Linear, "mode for proc, HIGHLY do not recommend exponential PLEASE");
+            BleedColor = Config.Bind("Hyperbleed 2", "Color Cycle", 6, "Set to 1 to disable color change");
+            BleedStackBase = Config.Bind("Hyperbleed 2", "Stack Initial Multiplier", 1f, "Multiple stacks of bleed stacks differently?!!");
+            BleedStackMult = Config.Bind("Hyperbleed 2", "Stack Value", 1f, "refer to hyperbleed stack mode");
+            BleedStackDecay = Config.Bind("Hyperbleed 2", "Stack Decay", 1f, "refer to hyperbleed stack mode");
+            BleedStackMode = Config.Bind("Hyperbleed 2", "Stack Mode", CritStackingMode.Linear, "Linear: Base + (Mult*(Count - 1)), Exponential: Base * Pow(Mult, Count - 1), Hyperbolic: Base + (Mult - Mult / (1 + ((Decay / Mult) / (1 - (Decay / Mult))) * Count)) Asymtotic: Base + Mult * (1 - 2 ^ (-Count / Decay))");
+
+            CollapseEnable = Config.Bind("Hypercollapse 2", "Enable Collapse", true, "Enables hypercollapse for collapse.");
+            CollapseCap = Config.Bind("Hypercollapse 2", "Collapse Cap", -1f, "Maximum number of collapse chance. set to -1 to uncap.");
+            CollapseBase = Config.Bind("Hypercollapse 2", "Initial Multiplier", 1f, "yeah");
+            CollapseMult = Config.Bind("Hypercollapse 2", "Value", 1f, "refer to hypercollapse mode");
+            CollapseDecay = Config.Bind("Hypercollapse 2", "Decay", 1f, "refer to hypercollapse mode");
+            CollapseMode = Config.Bind("Hypercollapse 2", "Mode", CritStackingMode.Linear, "Linear: Base + (Mult*(Count - 1)), Exponential: Base * Pow(Mult, Count - 1), Hyperbolic: Base + (Mult - Mult / (1 + ((Decay / Mult) / (1 - (Decay / Mult))) * Count)) Asymtotic: Base + Mult * (1 - 2 ^ (-Count / Decay))");
+            CollapseFraction = Config.Bind("Hypercollapse 2", "Fraction Multiplier", true, "Whether fractional collapse chance should contribute to damage instead of in 100% increments.");
+            CollapseDamageBonus = Config.Bind("Hypercollapse 2", "Collapse Damage Affects Hypercollapse", true, "please turn off for asymptotic");
+            CollapseProcBase = Config.Bind("Hypercollapse 2", "Initial Proc", 1f, "value for proc");
+            CollapseProcMult = Config.Bind("Hypercollapse 2", "Proc Value", 1f, "value for proc");
+            CollapseProcDecay = Config.Bind("Hypercollapse 2", "Proc Decay", 1f, "refer to hypercollapse mode");
+            CollapseProcMode = Config.Bind("Hypercollapse 2", "Proc Mode", CritStackingMode.Linear, "mode for proc, HIGHLY do not recommend exponential PLEASE");
+            CollapseStackBase = Config.Bind("Hypercollapse 2", "Stack Initial Multiplier", 1f, "Multiple stacks of collapse stacks differently?!!");
+            CollapseStackMult = Config.Bind("Hypercollapse 2", "Stack Value", 1f, "refer to hypercollapse stack mode");
+            CollapseStackDecay = Config.Bind("Hypercollapse 2", "Stack Decay", 1f, "refer to hypercollapse stack mode");
+            CollapseStackMode = Config.Bind("Hypercollapse 2", "Stack Mode", CritStackingMode.Linear, "Linear: Base + (Mult*(Count - 1)), Exponential: Base * Pow(Mult, Count - 1), Hyperbolic: Base + (Mult - Mult / (1 + ((Decay / Mult) / (1 - (Decay / Mult))) * Count)) Asymtotic: Base + Mult * (1 - 2 ^ (-Count / Decay))");
+
+            HyperbolicCrit = Config.Bind("Hyperbleed 2", "Hyperbolic Crit", false, "makes crit hyperbolic (nerf). DISABLES CRIT SETTING");
+            HyperbolicBleed = Config.Bind("Hyperbleed 2", "Hyperbolic Bleed", false, "makes bleed hyperbolic (nerf). DISABLES BLEED SETTING");
+            HyperbolicCollapse = Config.Bind("Hyperbleed 2", "Hyperbolic Collapse", false, "makes collapse hyperbolic (nerf). DISABLES COLLAPSE SETTING");
+            LamerShatterspleen = Config.Bind("Hyperbleed 2", "Lamer Shatterspleen", true, "Shatterspleen adds crit chance to bleed chance instead of bleed doubleproccing.");
 
             if (Mods("com.xoxfaby.BetterUI")) BetterUICompat();
-            if (Mods("com.themysticsword.mysticsitems") && Moonglasses.Value != 0) MoonglassesRework();
+            if (Mods("com.themysticsword.mysticsitems") && Moonglasses.Value != 0) Crit.MoonglassesRework();
 
-            IL.RoR2.HealthComponent.TakeDamage += (il) =>
-            {
-                ILCursor c = new(il);
-                int damageInfoIndex = -1;
-                if (c.TryGotoNext(MoveType.After,
-                    x => x.MatchLdarg(out damageInfoIndex),
-                    x => x.MatchLdfld<DamageInfo>(nameof(DamageInfo.crit)),
-                    x => x.MatchBrfalse(out _),
-                    x => x.MatchLdloc(out _),
-                    x => x.MatchLdloc(1),
-                    x => x.MatchCallOrCallvirt<CharacterBody>("get_critMultiplier")) && damageInfoIndex != -1)
-                {
-                    c.Emit(OpCodes.Ldloc_1);
-                    c.Emit(OpCodes.Ldarg, damageInfoIndex);
-                    c.EmitDelegate<Func<float, CharacterBody, DamageInfo, float>>((orig, self, info) =>
-                    {
-                        if (!self) return orig;
-                        AdditionalCritInfo aci = null;
-                        if (!critInfoAttachments.TryGetValue(info, out aci))
-                        {
-                            aci = RollHypercrit(orig - 2f, self, true);
-                            critInfoAttachments.Add(info, aci);
-                        }
-                        info.crit = aci.numCrits > 0;
-                        return aci.damageMult;
-                    });
-                }
-            };
-
-            IL.RoR2.HealthComponent.SendDamageDealt += (il) => {
-                var c = new ILCursor(il);
-                c.GotoNext(MoveType.After,
-                    x => x.MatchNewobj<DamageDealtMessage>());
-                c.Emit(OpCodes.Dup);
-                c.Emit(OpCodes.Ldarg_0);
-                c.EmitDelegate<Action<DamageDealtMessage, DamageReport>>((msg, report) => {
-                    TryPassHypercrit(report.damageInfo, msg);
-                });
-            };
-            On.RoR2.DamageDealtMessage.Serialize += (orig, self, writer) => {
-                orig(self, writer);
-                AdditionalCritInfo aci;
-                if (!critInfoAttachments.TryGetValue(self, out aci)) aci = new AdditionalCritInfo();
-                aci.Serialize(writer);
-            };
-            On.RoR2.DamageDealtMessage.Deserialize += (orig, self, reader) => {
-                orig(self, reader);
-                AdditionalCritInfo aci = new AdditionalCritInfo();
-                aci.Deserialize(reader);
-                critInfoAttachments.Add(self, aci);
-                lastNetworkedCritInfo = aci;
-            };
-            IL.RoR2.DamageNumberManager.SpawnDamageNumber += (il) => {
-                var c = new ILCursor(il);
-                c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt(typeof(DamageColor), nameof(DamageColor.FindColor)));
-                c.EmitDelegate<Func<Color, Color>>((origColor) => {
-                    if (lastNetworkedCritInfo == null) return origColor;
-                    var aci = lastNetworkedCritInfo;
-                    lastNetworkedCritInfo = null;
-                    if (aci.numCrits == 0) return origColor;
-                    float h = 1f / 6f - (aci.numCrits - 1f) / Color.Value;
-                    return UnityEngine.Color.HSVToRGB(((h % 1f) + 1f) % 1f, 1f, 1f);
-                });
-            };
-            On.RoR2.GlobalEventManager.OnCrit += (orig, self, body, damageInfo, master, procCoefficient, procChainMask) =>
-            {
-                critInfoAttachments.TryGetValue(damageInfo, out var aci);
-                if (aci != null && aci.numProcs > 1)
-                {
-                    int procs = aci.numProcs;
-                    aci.numProcs = 0;
-                    for (var i = 0; i < procs; i++) orig(self, body, damageInfo, master, procCoefficient, procChainMask);
-                }
-                else orig(self, body, damageInfo, master, procCoefficient, procChainMask);
-            };
-            if (Flurry.Value)
-            {
-                On.EntityStates.Huntress.HuntressWeapon.FireFlurrySeekingArrow.OnEnter += (orig, self) => {
-                    orig(self);
-                    var newCrit = RollHypercrit(self.characterBody.critMultiplier - 2f, self.characterBody);
-                    if (newCrit.numCrits > 1)
-                        newCrit.damageMult *= 6 / (float)(3 + 3 * newCrit.numCrits);
-                    critInfoAttachments.Add(self, newCrit);
-
-                    self.isCrit = newCrit.numCrits > 0;
-                    self.maxArrowCount = 3 + newCrit.numCrits * 3;
-                    self.arrowReloadDuration = self.baseArrowReloadDuration * (3f / self.maxArrowCount) / self.attackSpeedStat;
-                };
-                IL.EntityStates.Huntress.HuntressWeapon.FireSeekingArrow.FireOrbArrow += (il) => {
-                    var c = new ILCursor(il);
-                    c.GotoNext(x => x.MatchStloc(0));
-                    c.Emit(OpCodes.Dup);
-                    c.Emit(OpCodes.Ldarg_0);
-                    c.EmitDelegate<Action<GenericDamageOrb, EntityStates.Huntress.HuntressWeapon.FireSeekingArrow>>((orb, self) => {
-                        TryPassHypercrit(self, orb);
-                    });
-                };
-                IL.RoR2.Orbs.GenericDamageOrb.OnArrival += (il) => {
-                    var c = new ILCursor(il);
-                    c.GotoNext(MoveType.After,
-                        x => x.MatchNewobj<DamageInfo>());
-                    c.Emit(OpCodes.Dup);
-                    c.Emit(OpCodes.Ldarg_0);
-                    c.EmitDelegate<Action<DamageInfo, GenericDamageOrb>>((di, orb) => {
-                        TryPassHypercrit(orb, di);
-                    });
-                };
-            }
-        }
-
-        public static void BetterUICompat()
-        {
-            BetterUI.StatsDisplay.regexmap.Add("$hypercrit", statBody => GetDamage(statBody.crit, statBody.critMultiplier - 2).ToString("0.##"));
-            var sortedKeys = BetterUI.StatsDisplay.regexmap.Keys.ToList();
-            sortedKeys.Sort((s1, s2) => s2.Length - s1.Length);
-            BetterUI.StatsDisplay.regexpattern = new Regex(@"(\" + string.Join(@"|\", sortedKeys) + ")");
-        }
-
-        public static void MoonglassesRework()
-        {
-            if (MysticsItems.ConfigManager.General.disabledItems.Keys.Any(x => ItemCatalog.GetItemDef(x).name == "MysticsItems_Moonglasses")) return;
-            On.RoR2.CharacterBody.RecalculateStats += (orig, self) =>
-            {
-                orig(self);
-                if (self?.inventory != null)
-                {
-                    int count = self.inventory.GetItemCount(MysticsItems.MysticsItemsContent.Items.MysticsItems_Moonglasses);
-                    if (count == 0) return;
-                    self.crit *= Mathf.Pow(2, count);
-                    self.crit -= Moonglasses.Value * count;
-                    self.crit = Mathf.Max(0, self.crit);
-                }
-            };
-            On.RoR2.Language.GetLocalizedStringByToken += (orig, self, token) =>
-            {
-                if (token == "ITEM_MYSTICSITEMS_MOONGLASSES_PICKUP") return orig(self, "ITEM_HYPERCRIT_MOONGLASSES_PICKUP");
-                if (token == "ITEM_MYSTICSITEMS_MOONGLASSES_DESC") return orig(self, "ITEM_HYPERCRIT_MOONGLASSES_DESC");
-                return orig(self, token);
-            };
-            LanguageAPI.Add("ITEM_HYPERCRIT_MOONGLASSES_PICKUP", "Increase Critical Strike damage... <color=#FF7F7F>BUT reduce Critical Strike chance.</color>");
-            LanguageAPI.Add("ITEM_HYPERCRIT_MOONGLASSES_DESC", "Increase Critical Strike damage by <style=cIsDamage>{CritDamageIncrease}% <style=cStack>(+{CritDamageIncreasePerStack}% per stack)</style></style>. <style=cIsUtility>reduce Critical Strike chance by {0}% <style=cStack>(+{0}% per stack)</style> for each stack.</style>"
-                .Replace("{0}", Moonglasses.Value.ToString())
-                .Replace("{CritDamageIncrease}", MysticsItems.Items.Moonglasses.critDamageIncrease.ToString())
-                .Replace("{CritDamageIncreasePerStack}", MysticsItems.Items.Moonglasses.critDamageIncreasePerStack.ToString()));
+            if (CritEnable.Value) Crit.Patch();
+            if (BleedEnable.Value || CollapseEnable.Value) Bleed.Patch();
+            if (HyperbolicCrit.Value) Crit.PatchHyperbolic();
+            Bleed.PatchStack();
         }
 
         public static bool Mods(params string[] arr)
@@ -243,56 +185,38 @@ namespace NotHypercrit
             return true;
         }
 
-        //for mod interop
-        public bool TryGetHypercrit(object target, ref AdditionalCritInfo aci)
+        public static float GetCollapse(CharacterBody body)
         {
-            return critInfoAttachments.TryGetValue(target, out aci);
+            return HyperbolicCollapse.Value ?
+                (10f - (10f / (1f + (0.011111f * (body.inventory.GetItemCount(DLC1Content.Items.BleedOnHitVoid) + (body.HasBuff(DLC1Content.Buffs.EliteVoid) ? 10 : 0))))))
+                : ((body.inventory.GetItemCount(DLC1Content.Items.BleedOnHitVoid) + (body.HasBuff(DLC1Content.Buffs.EliteVoid) ? 10 : 0)) * 10);
         }
 
-        private bool TryPassHypercrit(object from, object to)
+        public static float GetWLuck(float orig, CharacterBody body)
         {
-            bool retv = critInfoAttachments.TryGetValue(from, out AdditionalCritInfo aci);
-            if (retv) critInfoAttachments.Add(to, aci);
-            return retv;
+            float chance = 100 * (int)orig + 100 * BetterUI.Utils.LuckCalc(orig % 1, body.master.luck);
+            if (chance > 0) chance += (body?.inventory?.GetItemCount(ItemCatalog.FindItemIndex("MysticsItems_ScratchTicket")) ?? 0);
+            return chance;
         }
 
-        private bool TryPassHypercrit(object from, object to, out AdditionalCritInfo aci)
+        public static void BetterUICompat()
         {
-            bool retv = critInfoAttachments.TryGetValue(from, out aci);
-            if (retv) critInfoAttachments.Add(to, aci);
-            return retv;
+            BetterUI.StatsDisplay.regexmap["$luckcrit"] = statBody => GetWLuck(statBody.crit / 100f, statBody).ToString("0.##");
+            BetterUI.StatsDisplay.regexmap.Add("$hypercrit", statBody => Crit.GetDamage(statBody.crit, statBody.critMultiplier - 2, statBody).ToString("0.##"));
+            BetterUI.StatsDisplay.regexmap.Add("$bleed", statBody => statBody.bleedChance.ToString("0.##"));
+            BetterUI.StatsDisplay.regexmap.Add("$collapse", statBody => (GetCollapse(statBody) * 100).ToString("0.##"));
+            BetterUI.StatsDisplay.regexmap.Add("$luckbleed", statBody => GetWLuck(statBody.bleedChance / 100f, statBody).ToString("0.##"));
+            BetterUI.StatsDisplay.regexmap.Add("$luckcollapse", statBody => GetWLuck(GetCollapse(statBody), statBody).ToString("0.##"));
+            BetterUI.StatsDisplay.regexmap.Add("$bleeddamage", statBody => statBody.GetBleedDamage().ToString("0.##"));
+            BetterUI.StatsDisplay.regexmap.Add("$collapsedamage", statBody => statBody.GetCollapseDamage().ToString("0.##"));
+            BetterUI.StatsDisplay.regexmap.Add("$hyperbleed", statBody => Bleed.GetDamage(statBody.bleedChance, statBody.GetBleedDamage() - 1, statBody).ToString("0.##"));
+            BetterUI.StatsDisplay.regexmap.Add("$hypercollapse", statBody => Bleed.GetDamage(GetCollapse(statBody) * 100, statBody.GetCollapseDamage() - 1, statBody).ToString("0.##"));
+            var sortedKeys = BetterUI.StatsDisplay.regexmap.Keys.ToList();
+            sortedKeys.Sort((s1, s2) => s2.Length - s1.Length);
+            BetterUI.StatsDisplay.regexpattern = new Regex(@"(\" + string.Join(@"|\", sortedKeys) + ")");
         }
 
-        public static AdditionalCritInfo RollHypercrit(float damage, CharacterBody body, bool forceSingleCrit = false)
-        {
-            var aci = new AdditionalCritInfo();
-            if (body)
-            {
-                aci.totalCritChance = body.crit;
-                //Base crit chance
-                var bCrit = Mathf.Max(body.crit - (forceSingleCrit ? 100f : 0f), 0f);
-                //Amount of non-guaranteed crit chance (for the final crit in the stack)
-                var cCrit = bCrit % 100f;
-                aci.numCrits = Mathf.FloorToInt(bCrit / 100f) + (Util.CheckRoll(cCrit, body.master) ? 1 : 0);
-                if (Cap.Value >= 0) aci.numCrits = Mathf.Min(Cap.Value, aci.numCrits);
-                if (forceSingleCrit) aci.numCrits++;
-                if (aci.numCrits == 0) aci.damageMult = 1f;
-                else aci.damageMult = Calc(Mode.Value, Base.Value + damage, Mult.Value + (DamageBonus.Value ? damage : 0), aci.numCrits);
-                float proc = 0;
-                if (aci.numCrits != 0) proc = Calc(ProcMode.Value, ProcBase.Value, ProcMult.Value, aci.numCrits);
-                aci.numProcs = (int)proc + ((Run.instance.runRNG.RangeFloat(0, 1) < (proc % 1)) ? 1 : 0);
-            }
-            return aci;
-        }
-
-        public static float GetDamage(float chance, float damage)
-        {
-            int numCrits = Mathf.Min(1, Mathf.CeilToInt(chance / 100f));
-            if (Cap.Value >= 0) numCrits = Mathf.Min(Cap.Value, numCrits);
-            return Calc(Mode.Value, Base.Value + damage, Mult.Value + (DamageBonus.Value ? damage : 0), numCrits);
-        }
-
-        public static float Calc(CritStackingMode mode, float init, float mult, int count)
+        public static float Calc(CritStackingMode mode, float init, float mult, float decay, float count)
         {
             switch (mode)
             {
@@ -300,8 +224,10 @@ namespace NotHypercrit
                     return init + mult * (count - 1);
                 case CritStackingMode.Exponential:
                     return init * Mathf.Pow(mult, count - 1);
+                case CritStackingMode.Hyperbolic:
+                    return init + (mult * decay * count / (decay * count + mult - decay));
                 case CritStackingMode.Asymptotic:
-                    return init + mult * (1f - Mathf.Pow(2, -(count - 1)));
+                    return init + mult * (1f - Mathf.Pow(2, -(count - 1) / decay));
             }
             Log.LogError("Invalid Mode??");
             return 0;
