@@ -22,7 +22,7 @@ namespace NotHypercrit
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "prodzpod";
         public const string PluginName = "Hypercrit2";
-        public const string PluginVersion = "1.1.2";
+        public const string PluginVersion = "1.2.2";
         public static ManualLogSource Log;
         internal static PluginInfo pluginInfo;
         public static ConfigFile Config;
@@ -44,7 +44,8 @@ namespace NotHypercrit
         public static ConfigEntry<int> CritColor;
 
         public static ConfigEntry<bool> Flurry;
-        public static ConfigEntry<int> Moonglasses;
+        public static ConfigEntry<float> LaserScope;
+        public static ConfigEntry<float> Moonglasses;
 
         public static ConfigEntry<bool> BleedEnable;
         public static ConfigEntry<float> BleedCap;
@@ -128,7 +129,8 @@ namespace NotHypercrit
             CritColor = Config.Bind("Hypercrit 2", "Color Cycle", 12, "Set to 1 to disable color change");
 
             Flurry = Config.Bind("Hypercrit 2", "Procs Affects Flurry", true, "yeah!!");
-            Moonglasses = Config.Bind("Hypercrit 2", "Moonglasses Rework", 100, "makes it so moonglasses reduces crit chance. actual downside?? set to 0 to disable.");
+            LaserScope = Config.Bind("Hypercrit 2", "Laser Scope Crit on First Stack", 25f, "Gives crit chance on first stack, like other crit synergy items.");
+            Moonglasses = Config.Bind("Hypercrit 2", "Moonglasses Rework", 100f, "makes it so moonglasses reduces crit chance. actual downside?? set to 0 to disable.");
 
             BleedEnable = Config.Bind("Hyperbleed 2", "Enable", true, "Enables hyperbleed.");
             BleedCap = Config.Bind("Hyperbleed 2", "Bleed Cap", -1f, "Maximum number of bleed chance. set to -1 to uncap.");
@@ -171,6 +173,7 @@ namespace NotHypercrit
             LamerShatterspleen = Config.Bind("Hyperbleed 2", "Lamer Shatterspleen", true, "Shatterspleen adds crit chance to bleed chance instead of bleed doubleproccing.");
 
             if (Mods("com.xoxfaby.BetterUI")) BetterUICompat();
+            if (LaserScope.Value != 0) Crit.LaserScopeRework();
             if (Mods("com.themysticsword.mysticsitems") && Moonglasses.Value != 0) Crit.MoonglassesRework();
 
             if (CritEnable.Value) Crit.Patch();

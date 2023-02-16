@@ -22,6 +22,7 @@ This is a rewrite/continuation of [Hypercrit by Thinkinvis](https://thunderstore
     - [BetterUI](https://thunderstore.io/package/XoXFaby/BetterUI/) support: adds `$bleed`, `$collapse`, `$luckbleed`, `$luckcollapse`, `$bleeddamage`, `$collapsedamage`, `$hyperbleed`, `$hypercollapse` that shows bleed chance and current damage multiplier, similar to it's crit counterpart.
 
 - Other Contents
+    - Laser Scope rebalance: gives it crit chance, like other crit items.
     - [Moonglasses](https://thunderstore.io/package/TheMysticSword/MysticsItems/) rework: Instead of halving Crit chance, reduces it by -100% (Configurable) to be more impactful.
     - Shtterspleen rework: Instead of having a separate bleed proc, simply adds crit chance to bleed chance. (slight nerf)
     - BetterUI's `$luckcrit` and `$luckbleed` reflects reality with [Scratch Ticket](https://thunderstore.io/package/TheMysticSword/MysticsItems/)s better.
@@ -34,6 +35,9 @@ also I did get permission from mystic btw
 ![Image](https://cdn.discordapp.com/attachments/515678914316861451/1075218747457019984/image.png)
 
 ## Changelog
+- 1.2.2: Bugfixes
+- 1.2.1: Bugfixes
+- 1.2.0: added Laser Focus rebalance
 - 1.1.3: Bugfixes
 - 1.1.2: Bugfixes
 - 1.1.1: Added changelog, The Ultimate README Update Of All Time

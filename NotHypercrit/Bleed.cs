@@ -3,6 +3,7 @@ using MonoMod.Cil;
 using R2API;
 using RoR2;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -240,8 +241,8 @@ namespace NotHypercrit
         }
         public static float HyperbleedMultiplier(GameObject attacker, DotController.DotIndex dotIndex)
         {
-            var inflictHyperbleedInfo = inflictHyperBleedInfos.Find(x => x.attacker == attacker && x.dotIndex == dotIndex);
-            if (!inflictHyperbleedInfo.Equals(default(InflictHyperbleedInfo))) return inflictHyperbleedInfo.damageMult; // this should cover mods that don't use hypercrit2?
+            InflictHyperbleedInfo inflictHyperbleedInfo = inflictHyperBleedInfos.First(x => x.attacker == attacker && x.dotIndex == dotIndex);
+            if (inflictHyperbleedInfo != null) return inflictHyperbleedInfo.damageMult; // this should cover mods that don't use hypercrit2?
             return 1;
         }
 

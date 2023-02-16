@@ -37,11 +37,10 @@ namespace NotHypercrit
                         NotHypercritPlugin.AdditionalProcInfo aci = null;
                         if (!critInfoAttachments.TryGetValue(info, out aci))
                         {
-                            aci = RollHypercrit(orig - 2f, self, true);
+                            aci = RollHypercrit(orig - 2f, self);
                             critInfoAttachments.Add(info, aci);
                         }
-                        info.crit = aci.num > 0;
-                        return orig + aci.damageMult;
+                        return Mathf.Max(orig, aci.damageMult); // jank 2, thanks railr
                     });
                 }
             };
@@ -87,7 +86,6 @@ namespace NotHypercrit
                     var aci = lastNetworkedCritInfo;
                     lastNetworkedCritInfo = null;
                     float effectiveCount = GetEffectiveCount(aci);
-                    if (NotHypercritPlugin.CritFraction.Value) effectiveCount += 1;
                     if (effectiveCount == 0) return origColor;
                     float h = 1f / 6f - (effectiveCount - 1f) / NotHypercritPlugin.CritColor.Value;
                     return Color.HSVToRGB(((h % 1f) + 1f) % 1f, 1f, 1f);
@@ -135,6 +133,20 @@ namespace NotHypercrit
                 orig(self);
                 if (self == null || self.inventory == null) return;
                 if (NotHypercritPlugin.HyperbolicCrit.Value) self.crit = 100f - (10000f / (100f + (1.111111f * self.crit)));
+            };
+        }
+
+        public static void LaserScopeRework()
+        {
+            RecalculateStatsAPI.GetStatCoefficients += (self, args) =>
+            {
+                if (self == null || self.inventory == null) return;
+                if (self.inventory.GetItemCount(DLC1Content.Items.CritDamage) > 0) args.critAdd += NotHypercritPlugin.LaserScope.Value;
+            };
+            On.RoR2.Language.GetLocalizedStringByToken += (orig, self, token) =>
+            {
+                if (token == "ITEM_CRITDAMAGE_DESC") return $"Gain <style=cIsDamage>{NotHypercritPlugin.LaserScope.Value}% critical chance</style>. " + orig(self, token);
+                else return orig(self, token);
             };
         }
 
@@ -193,7 +205,7 @@ namespace NotHypercrit
             {
                 aci.totalChance = body.crit;
                 float effectiveCount = GetEffectiveCount(body.crit, body, forceSingleCrit);
-                aci.num = NotHypercritPlugin.CritFraction.Value ? (int)effectiveCount : (Mathf.FloorToInt(effectiveCount) + (Util.CheckRoll(effectiveCount % 1f * 100, body.master) ? 1 : 0));
+                aci.num = (NotHypercritPlugin.CritFraction.Value ? (Mathf.FloorToInt(effectiveCount) + (Util.CheckRoll(effectiveCount % 1f * 100, body.master) ? 1 : 0)) : (int)effectiveCount) + (forceSingleCrit ? 1 : 0);
                 if (aci.num == 0) aci.damageMult = 1f;
                 else aci.damageMult = NotHypercritPlugin.Calc(
                     NotHypercritPlugin.CritMode.Value, 
