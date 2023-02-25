@@ -7,16 +7,17 @@ using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using HarmonyLib;
 
 namespace NotHypercrit
 {
     public class Crit
     {
-        public static ConditionalWeakTable<object, NotHypercritPlugin.AdditionalProcInfo> critInfoAttachments = new ConditionalWeakTable<object, NotHypercritPlugin.AdditionalProcInfo>();
-        public static NotHypercritPlugin.AdditionalProcInfo lastNetworkedCritInfo = null;
+        public static ConditionalWeakTable<object, Main.AdditionalProcInfo> critInfoAttachments = new ConditionalWeakTable<object, Main.AdditionalProcInfo>();
+        public static Main.AdditionalProcInfo lastNetworkedCritInfo = null;
         public static void Patch()
         {
-            NotHypercritPlugin.Log.LogDebug("The Spirit of ThinkInvis Embraces You...");
+            Main.Log.LogDebug("The Spirit of ThinkInvis Embraces You...");
             IL.RoR2.HealthComponent.TakeDamage += (il) =>
             {
                 ILCursor c = new(il);
@@ -30,14 +31,15 @@ namespace NotHypercrit
                     x => x.MatchCallOrCallvirt<CharacterBody>("get_" + nameof(CharacterBody.critMultiplier))) && damageInfoIndex != -1)
                 {
                     c.Emit(OpCodes.Ldloc_1);
+                    c.Emit(OpCodes.Ldarg_0);
                     c.Emit(OpCodes.Ldarg, damageInfoIndex);
-                    c.EmitDelegate<Func<float, CharacterBody, DamageInfo, float>>((orig, self, info) =>
+                    c.EmitDelegate<Func<float, CharacterBody, HealthComponent, DamageInfo, float>>((orig, self, self2, info) =>
                     {
                         if (!self) return orig;
-                        NotHypercritPlugin.AdditionalProcInfo aci = null;
+                        Main.AdditionalProcInfo aci = null;
                         if (!critInfoAttachments.TryGetValue(info, out aci))
                         {
-                            aci = RollHypercrit(orig - 2f, self);
+                            aci = RollHypercrit(orig - 2f, self, self2.body);
                             critInfoAttachments.Add(info, aci);
                         }
                         return Mathf.Max(orig, aci.damageMult); // jank 2, thanks railr
@@ -56,13 +58,13 @@ namespace NotHypercrit
             };
             On.RoR2.DamageDealtMessage.Serialize += (orig, self, writer) => {
                 orig(self, writer);
-                NotHypercritPlugin.AdditionalProcInfo aci;
+                Main.AdditionalProcInfo aci;
                 if (!critInfoAttachments.TryGetValue(self, out aci)) aci = new();
                 aci.Serialize(writer);
             };
             On.RoR2.DamageDealtMessage.Deserialize += (orig, self, reader) => {
                 orig(self, reader);
-                NotHypercritPlugin.AdditionalProcInfo aci = new();
+                Main.AdditionalProcInfo aci = new();
                 aci.Deserialize(reader);
                 critInfoAttachments.Add(self, aci);
                 lastNetworkedCritInfo = aci;
@@ -87,11 +89,11 @@ namespace NotHypercrit
                     lastNetworkedCritInfo = null;
                     float effectiveCount = GetEffectiveCount(aci);
                     if (effectiveCount == 0) return origColor;
-                    float h = 1f / 6f - (effectiveCount - 1f) / NotHypercritPlugin.CritColor.Value;
+                    float h = 1f / 6f - (effectiveCount - 1f) / Main.CritColor.Value;
                     return Color.HSVToRGB(((h % 1f) + 1f) % 1f, 1f, 1f);
                 });
             };
-            if (NotHypercritPlugin.Flurry.Value)
+            if (Main.Flurry.Value)
             {
                 On.EntityStates.Huntress.HuntressWeapon.FireFlurrySeekingArrow.OnEnter += (orig, self) => {
                     orig(self);
@@ -132,7 +134,7 @@ namespace NotHypercrit
             {
                 orig(self);
                 if (self == null || self.inventory == null) return;
-                if (NotHypercritPlugin.HyperbolicCrit.Value) self.crit = 100f - (10000f / (100f + (1.111111f * self.crit)));
+                if (Main.HyperbolicCrit.Value) self.crit = 100f - (10000f / (100f + (1.111111f * self.crit)));
             };
         }
 
@@ -141,11 +143,11 @@ namespace NotHypercrit
             RecalculateStatsAPI.GetStatCoefficients += (self, args) =>
             {
                 if (self == null || self.inventory == null) return;
-                if (self.inventory.GetItemCount(DLC1Content.Items.CritDamage) > 0) args.critAdd += NotHypercritPlugin.LaserScope.Value;
+                if (self.inventory.GetItemCount(DLC1Content.Items.CritDamage) > 0) args.critAdd += Main.LaserScope.Value;
             };
             On.RoR2.Language.GetLocalizedStringByToken += (orig, self, token) =>
             {
-                if (token == "ITEM_CRITDAMAGE_DESC") return $"Gain <style=cIsDamage>{NotHypercritPlugin.LaserScope.Value}% critical chance</style>. " + orig(self, token);
+                if (token == "ITEM_CRITDAMAGE_DESC") return $"Gain <style=cIsDamage>{Main.LaserScope.Value}% critical chance</style>. " + orig(self, token);
                 else return orig(self, token);
             };
         }
@@ -161,7 +163,7 @@ namespace NotHypercrit
                     int count = self.inventory.GetItemCount(MysticsItems.MysticsItemsContent.Items.MysticsItems_Moonglasses);
                     if (count == 0) return;
                     self.crit *= Mathf.Pow(2, count);
-                    self.crit -= NotHypercritPlugin.Moonglasses.Value * count;
+                    self.crit -= Main.Moonglasses.Value * count;
                     self.crit = Mathf.Max(0, self.crit);
                 }
             };
@@ -173,71 +175,72 @@ namespace NotHypercrit
             };
             LanguageAPI.Add("ITEM_HYPERCRIT_MOONGLASSES_PICKUP", "Increase Critical Strike damage... <color=#FF7F7F>BUT reduce Critical Strike chance.</color>");
             LanguageAPI.Add("ITEM_HYPERCRIT_MOONGLASSES_DESC", "Increase Critical Strike damage by <style=cIsDamage>{CritDamageIncrease}% <style=cStack>(+{CritDamageIncreasePerStack}% per stack)</style></style>. <style=cIsUtility>reduce Critical Strike chance by {0}% <style=cStack>(+{0}% per stack)</style> for each stack.</style>"
-                .Replace("{0}", NotHypercritPlugin.Moonglasses.Value.ToString())
+                .Replace("{0}", Main.Moonglasses.Value.ToString())
                 .Replace("{CritDamageIncrease}", MysticsItems.Items.Moonglasses.critDamageIncrease.ToString())
                 .Replace("{CritDamageIncreasePerStack}", MysticsItems.Items.Moonglasses.critDamageIncreasePerStack.ToString()));
         }
 
         //for mod interop
-        public static bool TryGetHypercrit(object target, ref NotHypercritPlugin.AdditionalProcInfo aci)
+        public static bool TryGetHypercrit(object target, ref Main.AdditionalProcInfo aci)
         {
             return critInfoAttachments.TryGetValue(target, out aci);
         }
 
         private static bool TryPassHypercrit(object from, object to)
         {
-            bool retv = critInfoAttachments.TryGetValue(from, out NotHypercritPlugin.AdditionalProcInfo aci);
+            bool retv = critInfoAttachments.TryGetValue(from, out Main.AdditionalProcInfo aci);
             if (retv) critInfoAttachments.Add(to, aci);
             return retv;
         }
 
-        private static bool TryPassHypercrit(object from, object to, out NotHypercritPlugin.AdditionalProcInfo aci)
+        private static bool TryPassHypercrit(object from, object to, out Main.AdditionalProcInfo aci)
         {
             bool retv = critInfoAttachments.TryGetValue(from, out aci);
             if (retv) critInfoAttachments.Add(to, aci);
             return retv;
         }
 
-        public static NotHypercritPlugin.AdditionalProcInfo RollHypercrit(float damage, CharacterBody body, bool forceSingleCrit = false)
+        public static Main.AdditionalProcInfo RollHypercrit(float damage, CharacterBody body, CharacterBody body2 = null)
         {
-            var aci = new NotHypercritPlugin.AdditionalProcInfo();
+            var aci = new Main.AdditionalProcInfo();
             if (body)
             {
                 aci.totalChance = body.crit;
-                float effectiveCount = GetEffectiveCount(body.crit, body, forceSingleCrit);
-                aci.num = (NotHypercritPlugin.CritFraction.Value ? (Mathf.FloorToInt(effectiveCount) + (Util.CheckRoll(effectiveCount % 1f * 100, body.master) ? 1 : 0)) : (int)effectiveCount) + (forceSingleCrit ? 1 : 0);
+                float effectiveCount = GetEffectiveCount(body.crit, body);
+                if (body2 != null && Main.Mods("com.TeamMoonstorm.Starstorm2-Nightly") && NeedlesCompat(body2)) effectiveCount++;
+                aci.num = Main.CritFraction.Value ? (Mathf.FloorToInt(effectiveCount) + (Util.CheckRoll(effectiveCount % 1f * 100, body.master) ? 1 : 0)) : (int)effectiveCount;
                 if (aci.num == 0) aci.damageMult = 1f;
-                else aci.damageMult = NotHypercritPlugin.Calc(
-                    NotHypercritPlugin.CritMode.Value, 
-                    NotHypercritPlugin.CritBase.Value + damage, 
-                    NotHypercritPlugin.CritMult.Value + (NotHypercritPlugin.CritDamageBonus.Value ? damage : 0), 
-                    NotHypercritPlugin.CritDecay.Value, 
+                else aci.damageMult = Main.Calc(
+                    Main.CritMode.Value, 
+                    Main.CritBase.Value + damage, 
+                    Main.CritMult.Value + (Main.CritDamageBonus.Value ? damage : 0), 
+                    Main.CritDecay.Value, 
                     effectiveCount);
                 float proc = 0;
-                if (aci.num != 0) proc = NotHypercritPlugin.Calc(
-                    NotHypercritPlugin.CritProcMode.Value, 
-                    NotHypercritPlugin.CritProcBase.Value, 
-                    NotHypercritPlugin.CritProcMult.Value, 
-                    NotHypercritPlugin.CritProcDecay.Value, 
+                if (aci.num != 0) proc = Main.Calc(
+                    Main.CritProcMode.Value, 
+                    Main.CritProcBase.Value, 
+                    Main.CritProcMult.Value, 
+                    Main.CritProcDecay.Value, 
                     effectiveCount);
-                aci.numProcs = (int)proc + ((Run.instance.runRNG.RangeFloat(0, 1) < (proc % 1)) ? 1 : 0);
+                aci.numProcs = (int)proc + (Util.CheckRoll(proc % 1 * 100) ? 1 : 0);
             }
             return aci;
         }
 
         public static float GetDamage(float chance, float damage, CharacterBody body)
         {
-            return NotHypercritPlugin.Calc(
-                NotHypercritPlugin.CritMode.Value, 
-                NotHypercritPlugin.CritBase.Value + damage, 
-                NotHypercritPlugin.CritMult.Value + (NotHypercritPlugin.CritDamageBonus.Value ? damage : 0), 
-                NotHypercritPlugin.CritDecay.Value, 
+            return Main.Calc(
+                Main.CritMode.Value, 
+                Main.CritBase.Value + damage, 
+                Main.CritMult.Value + (Main.CritDamageBonus.Value ? damage : 0), 
+                Main.CritDecay.Value, 
                 Mathf.Max(1, GetEffectiveCount(chance + (100 - (chance % 100f)), body)));
         }
 
-        public static float GetEffectiveCount(NotHypercritPlugin.AdditionalProcInfo aci)
+        public static float GetEffectiveCount(Main.AdditionalProcInfo aci)
         {
-            if (NotHypercritPlugin.CritFraction.Value)
+            if (Main.CritFraction.Value)
             {
                 float ret = aci.totalChance / 100f;
                 if (ret < 1) ret = 0;
@@ -249,11 +252,16 @@ namespace NotHypercrit
         public static float GetEffectiveCount(float chance, CharacterBody body, bool forceSingleCrit = false)
         {
             float ret = Mathf.Max(0, (chance - (forceSingleCrit ? 100 : 0)) / 100f);
-            if (NotHypercritPlugin.CritCap.Value >= 0) ret = Mathf.Min(ret, NotHypercritPlugin.CritCap.Value);
-            if (NotHypercritPlugin.CritFraction.Value && NotHypercritPlugin.Mods("com.themysticsword.mysticsitems") && body?.inventory != null && ret > 0) ret += 0.01f * body.inventory.GetItemCount(ItemCatalog.FindItemIndex("MysticsItems_ScratchTicket"));
+            if (Main.CritCap.Value >= 0) ret = Mathf.Min(ret, Main.CritCap.Value);
+            if (Main.CritFraction.Value && Main.Mods("com.themysticsword.mysticsitems") && body?.inventory != null && ret > 0) ret += 0.01f * body.inventory.GetItemCount(ItemCatalog.FindItemIndex("MysticsItems_ScratchTicket"));
             if (ret <= 0) return 0;
-            if (!NotHypercritPlugin.CritFraction.Value) return Mathf.FloorToInt(ret) + (Util.CheckRoll(ret % 1f * 100, body.master) ? 1 : 0);
+            if (!Main.CritFraction.Value) return Mathf.FloorToInt(ret) + (Util.CheckRoll(ret % 1f * 100, body.master) ? 1 : 0);
             return ret;
+        }
+
+        public static bool NeedlesCompat(CharacterBody body)
+        {
+            return body.HasBuff(Moonstorm.Starstorm2.SS2Content.Buffs.BuffNeedle);
         }
     }
 }

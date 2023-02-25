@@ -35,6 +35,8 @@ also I did get permission from mystic btw
 ![Image](https://cdn.discordapp.com/attachments/515678914316861451/1075218747457019984/image.png)
 
 ## Changelog
+- 1.2.4: Bugfixes
+- 1.2.3: Bugfixes, Starstorm 2 (needles) compat, Buffed moonglasses default
 - 1.2.2: Bugfixes
 - 1.2.1: Bugfixes
 - 1.2.0: added Laser Focus rebalance

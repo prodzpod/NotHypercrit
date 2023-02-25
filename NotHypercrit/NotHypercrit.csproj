@@ -61,6 +61,9 @@
 	  <Reference Include="RoR2BepInExPack">
 	    <HintPath>libs\RoR2BepInExPack-nstrip.dll</HintPath>
 	  </Reference>
+	  <Reference Include="Starstorm2">
+	    <HintPath>libs\Starstorm2-nstrip.dll</HintPath>
+	  </Reference>
 	  <Reference Include="UnityEngine">
 	    <HintPath>libs\UnityEngine-nstrip.dll</HintPath>
 	  </Reference>

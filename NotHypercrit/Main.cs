@@ -17,12 +17,13 @@ namespace NotHypercrit
     [BepInDependency("com.xoxfaby.BetterUI", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.themysticsword.mysticsitems", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("Hayaku.VanillaRebalance", BepInDependency.DependencyFlags.SoftDependency)]
-    public class NotHypercritPlugin : BaseUnityPlugin
+    [BepInDependency("com.TeamMoonstorm.Starstorm2-Nightly", BepInDependency.DependencyFlags.SoftDependency)]
+    public class Main : BaseUnityPlugin
     {
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "prodzpod";
         public const string PluginName = "Hypercrit2";
-        public const string PluginVersion = "1.2.2";
+        public const string PluginVersion = "1.2.4";
         public static ManualLogSource Log;
         internal static PluginInfo pluginInfo;
         public static ConfigFile Config;
@@ -130,7 +131,8 @@ namespace NotHypercrit
 
             Flurry = Config.Bind("Hypercrit 2", "Procs Affects Flurry", true, "yeah!!");
             LaserScope = Config.Bind("Hypercrit 2", "Laser Scope Crit on First Stack", 25f, "Gives crit chance on first stack, like other crit synergy items.");
-            Moonglasses = Config.Bind("Hypercrit 2", "Moonglasses Rework", 100f, "makes it so moonglasses reduces crit chance. actual downside?? set to 0 to disable.");
+            Moonglasses = Config.Bind("Hypercrit 2", "Moonglasses Rework", 50f, "makes it so moonglasses reduces crit chance. actual downside?? set to 0 to disable.");
+            HyperbolicCrit = Config.Bind("Hypercrit 2", "Hyperbolic Crit", false, "makes crit hyperbolic (nerf). DISABLES CRIT SETTING");
 
             BleedEnable = Config.Bind("Hyperbleed 2", "Enable", true, "Enables hyperbleed.");
             BleedCap = Config.Bind("Hyperbleed 2", "Bleed Cap", -1f, "Maximum number of bleed chance. set to -1 to uncap.");
@@ -167,7 +169,6 @@ namespace NotHypercrit
             CollapseStackDecay = Config.Bind("Hypercollapse 2", "Stack Decay", 1f, "refer to hypercollapse stack mode");
             CollapseStackMode = Config.Bind("Hypercollapse 2", "Stack Mode", CritStackingMode.Linear, "Linear: Base + (Mult*(Count - 1)), Exponential: Base * Pow(Mult, Count - 1), Hyperbolic: Base + (Mult - Mult / (1 + ((Decay / Mult) / (1 - (Decay / Mult))) * Count)) Asymtotic: Base + Mult * (1 - 2 ^ (-Count / Decay))");
 
-            HyperbolicCrit = Config.Bind("Hyperbleed 2", "Hyperbolic Crit", false, "makes crit hyperbolic (nerf). DISABLES CRIT SETTING");
             HyperbolicBleed = Config.Bind("Hyperbleed 2", "Hyperbolic Bleed", false, "makes bleed hyperbolic (nerf). DISABLES BLEED SETTING");
             HyperbolicCollapse = Config.Bind("Hyperbleed 2", "Hyperbolic Collapse", false, "makes collapse hyperbolic (nerf). DISABLES COLLAPSE SETTING");
             LamerShatterspleen = Config.Bind("Hyperbleed 2", "Lamer Shatterspleen", true, "Shatterspleen adds crit chance to bleed chance instead of bleed doubleproccing.");
