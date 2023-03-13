@@ -2,6 +2,7 @@
 using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using BepInEx.Logging;
+using R2API;
 using R2API.Utils;
 using RoR2;
 using System.Linq;
@@ -23,13 +24,14 @@ namespace NotHypercrit
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "prodzpod";
         public const string PluginName = "Hypercrit2";
-        public const string PluginVersion = "1.2.4";
+        public const string PluginVersion = "1.2.5";
         public static ManualLogSource Log;
         internal static PluginInfo pluginInfo;
         public static ConfigFile Config;
 
         public enum CritStackingMode { Linear, Exponential, Hyperbolic, Asymptotic };
 
+        public static ConfigEntry<float> BaseCritChance;
         public static ConfigEntry<bool> CritEnable;
         public static ConfigEntry<float> CritCap;
         public static ConfigEntry<float> CritBase;
@@ -48,6 +50,7 @@ namespace NotHypercrit
         public static ConfigEntry<float> LaserScope;
         public static ConfigEntry<float> Moonglasses;
 
+        public static ConfigEntry<float> BaseBleedChance;
         public static ConfigEntry<bool> BleedEnable;
         public static ConfigEntry<float> BleedCap;
         public static ConfigEntry<float> BleedBase;
@@ -115,6 +118,7 @@ namespace NotHypercrit
             pluginInfo = Info;
             Log = Logger;
             Config = new ConfigFile(System.IO.Path.Combine(Paths.ConfigPath, PluginGUID + ".cfg"), true);
+            BaseCritChance = Config.Bind("Hypercrit 2", "Base Crit Chance", 0.01f, "Crit chance every survivors start with.");
             CritEnable = Config.Bind("Hypercrit 2", "Enable", true, "Enables hypercrit.");
             CritCap = Config.Bind("Hypercrit 2", "Crit Cap", -1f, "Maximum number of crits. set to -1 to uncap.");
             CritBase = Config.Bind("Hypercrit 2", "Initial Multiplier", 2f, "yeah");
@@ -132,8 +136,8 @@ namespace NotHypercrit
             Flurry = Config.Bind("Hypercrit 2", "Procs Affects Flurry", true, "yeah!!");
             LaserScope = Config.Bind("Hypercrit 2", "Laser Scope Crit on First Stack", 25f, "Gives crit chance on first stack, like other crit synergy items.");
             Moonglasses = Config.Bind("Hypercrit 2", "Moonglasses Rework", 50f, "makes it so moonglasses reduces crit chance. actual downside?? set to 0 to disable.");
-            HyperbolicCrit = Config.Bind("Hypercrit 2", "Hyperbolic Crit", false, "makes crit hyperbolic (nerf). DISABLES CRIT SETTING");
 
+            BaseBleedChance = Config.Bind("Hyperbleed 2", "Base Bleed Chance", 0f, "Bleed chance every survivors start with.");
             BleedEnable = Config.Bind("Hyperbleed 2", "Enable", true, "Enables hyperbleed.");
             BleedCap = Config.Bind("Hyperbleed 2", "Bleed Cap", -1f, "Maximum number of bleed chance. set to -1 to uncap.");
             BleedBase = Config.Bind("Hyperbleed 2", "Initial Multiplier", 1f, "yeah");
@@ -169,6 +173,7 @@ namespace NotHypercrit
             CollapseStackDecay = Config.Bind("Hypercollapse 2", "Stack Decay", 1f, "refer to hypercollapse stack mode");
             CollapseStackMode = Config.Bind("Hypercollapse 2", "Stack Mode", CritStackingMode.Linear, "Linear: Base + (Mult*(Count - 1)), Exponential: Base * Pow(Mult, Count - 1), Hyperbolic: Base + (Mult - Mult / (1 + ((Decay / Mult) / (1 - (Decay / Mult))) * Count)) Asymtotic: Base + Mult * (1 - 2 ^ (-Count / Decay))");
 
+            HyperbolicCrit = Config.Bind("Hypercrit 2", "Hyperbolic Crit", false, "makes crit hyperbolic (nerf). DISABLES CRIT SETTING");
             HyperbolicBleed = Config.Bind("Hyperbleed 2", "Hyperbolic Bleed", false, "makes bleed hyperbolic (nerf). DISABLES BLEED SETTING");
             HyperbolicCollapse = Config.Bind("Hyperbleed 2", "Hyperbolic Collapse", false, "makes collapse hyperbolic (nerf). DISABLES COLLAPSE SETTING");
             LamerShatterspleen = Config.Bind("Hyperbleed 2", "Lamer Shatterspleen", true, "Shatterspleen adds crit chance to bleed chance instead of bleed doubleproccing.");
@@ -176,6 +181,12 @@ namespace NotHypercrit
             if (Mods("com.xoxfaby.BetterUI")) BetterUICompat();
             if (LaserScope.Value != 0) Crit.LaserScopeRework();
             if (Mods("com.themysticsword.mysticsitems") && Moonglasses.Value != 0) Crit.MoonglassesRework();
+
+            RecalculateStatsAPI.GetStatCoefficients += (self, args) =>
+            {
+                self.baseCrit = BaseCritChance.Value * 100;
+                self.bleedChance += BaseBleedChance.Value * 100;
+            };
 
             if (CritEnable.Value) Crit.Patch();
             if (BleedEnable.Value || CollapseEnable.Value) Bleed.Patch();

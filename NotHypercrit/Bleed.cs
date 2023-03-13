@@ -222,7 +222,7 @@ namespace NotHypercrit
                     else return orig(self, token);
                 };
             }
-            On.RoR2.CharacterBody.RecalculateStats += (orig, self) =>
+            RoR2Application.onLoad += () => On.RoR2.CharacterBody.RecalculateStats += (orig, self) =>
             {
                 orig(self);
                 if (self == null || self.inventory == null) return;

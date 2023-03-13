@@ -13,69 +13,65 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="BepInEx.Analyzers" Version="1.0.*">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
 		<PackageReference Include="BepInEx.Core" Version="5.4.19" />
 		<PackageReference Include="BepInEx.BaseLib" Version="5.4.19" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <Reference Include="BetterUI">
-	    <HintPath>libs\BetterUI-nstrip.dll</HintPath>
+	    <HintPath>..\..\libs\BetterUI-nstrip.dll</HintPath>
 	  </Reference>
 	  <Reference Include="com.unity.multiplayer-hlapi.Runtime">
-	    <HintPath>libs\com.unity.multiplayer-hlapi.Runtime-nstrip.dll</HintPath>
+	    <HintPath>..\..\libs\com.unity.multiplayer-hlapi.Runtime-nstrip.dll</HintPath>
 	  </Reference>
 	  <Reference Include="HGCSharpUtils">
-	    <HintPath>libs\HGCSharpUtils-nstrip.dll</HintPath>
+	    <HintPath>..\..\libs\HGCSharpUtils-nstrip.dll</HintPath>
 	  </Reference>
 	  <Reference Include="LegacyResourcesAPI">
-	    <HintPath>libs\LegacyResourcesAPI-nstrip.dll</HintPath>
+	    <HintPath>..\..\libs\LegacyResourcesAPI-nstrip.dll</HintPath>
 	  </Reference>
 	  <Reference Include="MMHOOK_RoR2">
-	    <HintPath>libs\MMHOOK_RoR2-nstrip.dll</HintPath>
+	    <HintPath>..\..\libs\MMHOOK_RoR2-nstrip.dll</HintPath>
 	  </Reference>
 	  <Reference Include="MysticsItemsPlugin">
-	    <HintPath>libs\MysticsItemsPlugin-nstrip.dll</HintPath>
+	    <HintPath>..\..\libs\MysticsItemsPlugin-nstrip.dll</HintPath>
 	  </Reference>
 	  <Reference Include="MysticsRisky2Utils">
-	    <HintPath>libs\MysticsRisky2Utils-nstrip.dll</HintPath>
+	    <HintPath>..\..\libs\MysticsRisky2Utils-nstrip.dll</HintPath>
 	  </Reference>
 	  <Reference Include="R2API.Core">
-	    <HintPath>libs\R2API.Core-nstrip.dll</HintPath>
+	    <HintPath>..\..\libs\R2API.Core-nstrip.dll</HintPath>
 	  </Reference>
 	  <Reference Include="R2API.Language">
-	    <HintPath>libs\R2API.Language-nstrip.dll</HintPath>
+	    <HintPath>..\..\libs\R2API.Language-nstrip.dll</HintPath>
 	  </Reference>
 	  <Reference Include="R2API.Networking">
-	    <HintPath>libs\R2API.Networking-nstrip.dll</HintPath>
+	    <HintPath>..\..\libs\R2API.Networking-nstrip.dll</HintPath>
 	  </Reference>
 	  <Reference Include="R2API.RecalculateStats">
-	    <HintPath>libs\R2API.RecalculateStats-nstrip.dll</HintPath>
+	    <HintPath>..\..\libs\R2API.RecalculateStats-nstrip.dll</HintPath>
 	  </Reference>
 	  <Reference Include="RoR2">
-	    <HintPath>libs\RoR2-nstrip.dll</HintPath>
+	    <HintPath>..\..\libs\RoR2-nstrip.dll</HintPath>
 	  </Reference>
 	  <Reference Include="RoR2BepInExPack">
-	    <HintPath>libs\RoR2BepInExPack-nstrip.dll</HintPath>
+	    <HintPath>..\..\libs\RoR2BepInExPack-nstrip.dll</HintPath>
 	  </Reference>
 	  <Reference Include="Starstorm2">
-	    <HintPath>libs\Starstorm2-nstrip.dll</HintPath>
+	    <HintPath>..\..\libs\Starstorm2-nstrip.dll</HintPath>
 	  </Reference>
 	  <Reference Include="UnityEngine">
-	    <HintPath>libs\UnityEngine-nstrip.dll</HintPath>
+	    <HintPath>..\..\libs\UnityEngine-nstrip.dll</HintPath>
 	  </Reference>
 	  <Reference Include="UnityEngine.CoreModule">
-	    <HintPath>libs\UnityEngine.CoreModule-nstrip.dll</HintPath>
+	    <HintPath>..\..\libs\UnityEngine.CoreModule-nstrip.dll</HintPath>
 	  </Reference>
 	  <Reference Include="UnityEngine.ParticleSystemModule">
-	    <HintPath>libs\UnityEngine.ParticleSystemModule-nstrip.dll</HintPath>
+	    <HintPath>..\..\libs\UnityEngine.ParticleSystemModule-nstrip.dll</HintPath>
 	  </Reference>
 	</ItemGroup>
 	
-	  <ItemGroup>
+	  <ItemGroup> 
 		<None Update="manifest.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
