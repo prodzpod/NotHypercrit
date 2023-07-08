@@ -36,6 +36,7 @@ also I did get permission from mystic btw
 ![Image](https://cdn.discordapp.com/attachments/515678914316861451/1075218747457019984/image.png)
 
 ## Changelog
+- 1.2.6: The Incident
 - 1.2.5: base crit/bleed chance
 - 1.2.4: Bugfixes
 - 1.2.3: Bugfixes, Starstorm 2 (needles) compat, Buffed moonglasses default

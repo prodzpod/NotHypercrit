@@ -1,6 +1,6 @@
 {
 	"name": "Hypercrit2",
-	"version_number": "1.2.5",
+	"version_number": "1.2.6",
 	"website_url": "https://github.com/prodzpod/NotHypercrit",
 	"description": "Continuation of ThinkInvis' Hypercrit AND TheMysticSword's Hyperbleed.",
 	"dependencies": [

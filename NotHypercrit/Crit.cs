@@ -164,6 +164,11 @@ namespace NotHypercrit
                     if (count == 0) return;
                     self.crit *= Mathf.Pow(2, count);
                     self.crit -= Main.Moonglasses.Value * count;
+                    if (self.crit < 0 && self.inventory.GetItemCount(DLC1Content.Items.ConvertCritChanceToCritDamage) > 0)
+                    {
+                        Chat.AddMessage("Hypercrit makes crit chance past 100 give a chance to do a hit that is your crit damage +100%. So in a scenario where your crit is 101% and crit damage is x2, mean your actual crit damage will be x2 in 100% cases and x3 in 1% cases. So to put it simply from x2 to x3.\r\nNow negative crit would work like this. Let's say you have -50% chance and x3.5 crit damage. Obviously no way for you to proc crits randomly, but could give a change to deal \"negative crit\" in other ways, that is -100% from you crit damage for every -100% crit chance past 0. So your crit damage range would be from x2.5 to x3.5.\r\nAt the least I was hoping that negative would work with survivors that can't have chance and instead get it converted to crit damage. Like railgunner.");
+                        self.master.TrueKill();
+                    }
                     self.crit = Mathf.Max(0, self.crit);
                 }
             };
