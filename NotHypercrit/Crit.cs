@@ -264,6 +264,7 @@ namespace NotHypercrit
             return ret;
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         public static bool NeedlesCompat(CharacterBody body)
         {
             return body.HasBuff(Moonstorm.Starstorm2.SS2Content.Buffs.BuffNeedle);
