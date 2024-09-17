@@ -27,6 +27,9 @@
 	  <Reference Include="LegacyResourcesAPI">
 	    <HintPath>..\..\libs\LegacyResourcesAPI-nstrip.dll</HintPath>
 	  </Reference>
+	  <Reference Include="LookingGlass">
+	    <HintPath>..\..\libs\LookingGlass-nstrip.dll</HintPath>
+	  </Reference>
 	  <Reference Include="MMHOOK_RoR2">
 	    <HintPath>..\..\libs\MMHOOK_RoR2-nstrip.dll</HintPath>
 	  </Reference>

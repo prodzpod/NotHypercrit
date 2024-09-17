@@ -10,7 +10,7 @@ This is a rewrite/continuation of [Hypercrit by Thinkinvis](https://thunderstore
     - Hyperbolic Scaling: Just like Hopoo intended...
     - Proc config: "On-crit" effects apply multiple times on Hypercrit. Configurable.
     - Fractional Crit Damage Increase: instead of damage increasing every 100%, all percentage past 100% is counted partially, similar to original hyperbleed.
-    - [BetterUI](https://thunderstore.io/package/XoXFaby/BetterUI/) support: adds `$hypercrit` that shows total current damage multiplier.
+    - [LookingGlass](https://thunderstore.io/package/DropPod/LookingGlass/) support: adds `[hypercrit]` that shows total current damage multiplier.
 
 - Hyperbleed
     - Color Variation: Gets darker as bleed stacks. Configurable.
@@ -19,14 +19,14 @@ This is a rewrite/continuation of [Hypercrit by Thinkinvis](https://thunderstore
     - Separated bleed and collapse configs to allow more control
     - Bleed "proc"s: Same with hypercrit's proc config, but more niche. Hook through `DotController.onDotInflictedServerGlobal`.
     - Built-in Bleed Damage support with extension methods. easy inter-mod ops.
-    - [BetterUI](https://thunderstore.io/package/XoXFaby/BetterUI/) support: adds `$bleed`, `$collapse`, `$luckbleed`, `$luckcollapse`, `$bleeddamage`, `$collapsedamage`, `$hyperbleed`, `$hypercollapse` that shows bleed chance and current damage multiplier, similar to it's crit counterpart.
+    - [LookingGlass](https://thunderstore.io/package/DropPod/LookingGlass/) support: adds `[collapseChance]`, `[bleedChanceWithLuck]`, `[collapseChanceWithLuck]`, `[bleedMultiplier]`, `[collapseMultiplier]`, `[hyperbleed]`, `[hypercollapse]` that shows bleed chance and current damage multiplier, similar to it's crit counterpart.
 
 - Other Contents
     - Ability to change base crit/bleed chance.
     - Laser Scope rebalance: gives it crit chance, like other crit items.
     - [Moonglasses](https://thunderstore.io/package/TheMysticSword/MysticsItems/) rework: Instead of halving Crit chance, reduces it by -100% (Configurable) to be more impactful.
     - Shtterspleen rework: Instead of having a separate bleed proc, simply adds crit chance to bleed chance. (slight nerf)
-    - BetterUI's `$luckcrit` and `$luckbleed` reflects reality with [Scratch Ticket](https://thunderstore.io/package/TheMysticSword/MysticsItems/)s better.
+    - LookingGlass's `[critWithLuck]` and `[bleedChanceWithLuck]` reflects reality with [Scratch Ticket](https://thunderstore.io/package/TheMysticSword/MysticsItems/)s better.
     - Hyperbolic Crit/Bleed/Collapse: opposite of hypercrit/bleed where all crit/bleed/collapse gain is capped to 100% with first 10% stack giving 10%. (Coefficient 1/9)
 
 ## BTW
@@ -36,6 +36,7 @@ also I did get permission from mystic btw
 ![Image](https://raw.githubusercontent.com/prodzpod/NotHypercrit/master/1.png)
 
 ## Changelog
+- 1.2.8: the compat is reforged
 - 1.2.7: made to work with SotS
 - 1.2.6: The Incident
 - 1.2.5: base crit/bleed chance

@@ -17,6 +17,7 @@ namespace NotHypercrit
     [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
     [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod)]
     [BepInDependency("Hayaku.VanillaRebalance", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("droppod.lookingglass", BepInDependency.DependencyFlags.SoftDependency)]
     public class Main : BaseUnityPlugin
     {
         public const string PluginGUID = PluginAuthor + "." + PluginName;
@@ -176,7 +177,7 @@ namespace NotHypercrit
             HyperbolicCollapse = Config.Bind("Hyperbleed 2", "Hyperbolic Collapse", false, "makes collapse hyperbolic (nerf). DISABLES COLLAPSE SETTING");
             LamerShatterspleen = Config.Bind("Hyperbleed 2", "Lamer Shatterspleen", true, "Shatterspleen adds crit chance to bleed chance instead of bleed doubleproccing.");
 
-            // if (Mods("com.xoxfaby.BetterUI")) BetterUICompat();
+            if (Mods("droppod.lookingglass")) LookingGlassCompat();
             if (LaserScope.Value != 0) Crit.LaserScopeRework();
             // if (Mods("com.themysticsword.mysticsitems") && Moonglasses.Value != 0) Crit.MoonglassesRework();
 
@@ -198,7 +199,6 @@ namespace NotHypercrit
             return true;
         }
 
-        /*
         public static float GetCollapse(CharacterBody body)
         {
             return HyperbolicCollapse.Value ?
@@ -220,23 +220,19 @@ namespace NotHypercrit
             return (int)chance + (1f - Mathf.Pow(1f - chance % 1f, Math.Abs(luck) + 1f));
         }
 
-public static void BetterUICompat()
-{
-   BetterUI.StatsDisplay.regexmap["$luckcrit"] = statBody => GetWLuck(statBody.crit / 100f, statBody).ToString("0.##");
-   BetterUI.StatsDisplay.regexmap.Add("$hypercrit", statBody => Crit.GetDamage(statBody.crit, statBody.critMultiplier - 2, statBody).ToString("0.##"));
-   BetterUI.StatsDisplay.regexmap.Add("$bleed", statBody => statBody.bleedChance.ToString("0.##"));
-   BetterUI.StatsDisplay.regexmap.Add("$collapse", statBody => (GetCollapse(statBody) * 100).ToString("0.##"));
-   BetterUI.StatsDisplay.regexmap.Add("$luckbleed", statBody => GetWLuck(statBody.bleedChance / 100f, statBody).ToString("0.##"));
-   BetterUI.StatsDisplay.regexmap.Add("$luckcollapse", statBody => GetWLuck(GetCollapse(statBody), statBody).ToString("0.##"));
-   BetterUI.StatsDisplay.regexmap.Add("$bleeddamage", statBody => statBody.GetBleedDamage().ToString("0.##"));
-   BetterUI.StatsDisplay.regexmap.Add("$collapsedamage", statBody => statBody.GetCollapseDamage().ToString("0.##"));
-   BetterUI.StatsDisplay.regexmap.Add("$hyperbleed", statBody => Bleed.GetDamage(statBody.bleedChance, statBody.GetBleedDamage() - 1, statBody).ToString("0.##"));
-   BetterUI.StatsDisplay.regexmap.Add("$hypercollapse", statBody => Bleed.GetDamage(GetCollapse(statBody) * 100, statBody.GetCollapseDamage() - 1, statBody).ToString("0.##"));
-   var sortedKeys = BetterUI.StatsDisplay.regexmap.Keys.ToList();
-   sortedKeys.Sort((s1, s2) => s2.Length - s1.Length);
-   BetterUI.StatsDisplay.regexpattern = new Regex(@"(\" + string.Join(@"|\", sortedKeys) + ")");
-}
-*/
+        public static void LookingGlassCompat()
+        {
+            LookingGlass.StatsDisplay.StatsDisplayClass.statDictionary["critWithLuck"] = statBody => GetWLuck(statBody.crit / 100f, statBody).ToString("0.##");
+            LookingGlass.StatsDisplay.StatsDisplayClass.statDictionary["bleedChanceWithLuck"] = statBody => GetWLuck(statBody.bleedChance / 100f, statBody).ToString("0.##");
+            LookingGlass.StatsDisplay.StatsDisplayClass.statDictionary.Add("collapseChance", statBody => _d((GetCollapse(statBody) * 100).ToString("0.##")));
+            LookingGlass.StatsDisplay.StatsDisplayClass.statDictionary.Add("collapseChanceWithLuck", statBody => _d(GetWLuck(GetCollapse(statBody), statBody).ToString("0.##")));
+            LookingGlass.StatsDisplay.StatsDisplayClass.statDictionary.Add("bleedMultiplier", statBody => _d(statBody.GetBleedDamage().ToString("0.##")));
+            LookingGlass.StatsDisplay.StatsDisplayClass.statDictionary.Add("collapseMultiplier", statBody => _d(statBody.GetCollapseDamage().ToString("0.##")));
+            LookingGlass.StatsDisplay.StatsDisplayClass.statDictionary.Add("hypercrit", statBody => _d(Crit.GetDamage(statBody.crit, statBody.critMultiplier - 2, statBody).ToString("0.##")));
+            LookingGlass.StatsDisplay.StatsDisplayClass.statDictionary.Add("hyperbleed", statBody => _d(Bleed.GetDamage(statBody.bleedChance, statBody.GetBleedDamage() - 1, statBody).ToString("0.##")));
+            LookingGlass.StatsDisplay.StatsDisplayClass.statDictionary.Add("hypercollapse", statBody => _d(Bleed.GetDamage(GetCollapse(statBody) * 100, statBody.GetCollapseDamage() - 1, statBody).ToString("0.##")));
+            static string _d(string input) { return $"<style=\"cIsDamage>{input}</style>"; }
+        }
 
         public static float Calc(CritStackingMode mode, float init, float mult, float decay, float count)
         {
