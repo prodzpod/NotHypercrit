@@ -33,9 +33,10 @@ This is a rewrite/continuation of [Hypercrit by Thinkinvis](https://thunderstore
 The code is under GPL3, since the original hypercrit was.
 
 also I did get permission from mystic btw  
-![Image](https://cdn.discordapp.com/attachments/515678914316861451/1075218747457019984/image.png)
+![Image](https://raw.githubusercontent.com/prodzpod/NotHypercrit/master/1.png)
 
 ## Changelog
+- 1.2.7: made to work with SotS
 - 1.2.6: The Incident
 - 1.2.5: base crit/bleed chance
 - 1.2.4: Bugfixes

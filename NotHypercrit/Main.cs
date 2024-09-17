@@ -5,6 +5,7 @@ using BepInEx.Logging;
 using R2API;
 using R2API.Utils;
 using RoR2;
+using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -15,10 +16,7 @@ namespace NotHypercrit
     [BepInDependency(R2API.R2API.PluginGUID)]
     [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
     [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod)]
-    [BepInDependency("com.xoxfaby.BetterUI", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInDependency("com.themysticsword.mysticsitems", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("Hayaku.VanillaRebalance", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInDependency("com.TeamMoonstorm.Starstorm2-Nightly", BepInDependency.DependencyFlags.SoftDependency)]
     public class Main : BaseUnityPlugin
     {
         public const string PluginGUID = PluginAuthor + "." + PluginName;
@@ -135,7 +133,7 @@ namespace NotHypercrit
 
             Flurry = Config.Bind("Hypercrit 2", "Procs Affects Flurry", true, "yeah!!");
             LaserScope = Config.Bind("Hypercrit 2", "Laser Scope Crit on First Stack", 25f, "Gives crit chance on first stack, like other crit synergy items.");
-            Moonglasses = Config.Bind("Hypercrit 2", "Moonglasses Rework", 50f, "makes it so moonglasses reduces crit chance. actual downside?? set to 0 to disable.");
+            // Moonglasses = Config.Bind("Hypercrit 2", "Moonglasses Rework", 50f, "makes it so moonglasses reduces crit chance. actual downside?? set to 0 to disable.");
 
             BaseBleedChance = Config.Bind("Hyperbleed 2", "Base Bleed Chance", 0f, "Bleed chance every survivors start with.");
             BleedEnable = Config.Bind("Hyperbleed 2", "Enable", true, "Enables hyperbleed.");
@@ -178,9 +176,9 @@ namespace NotHypercrit
             HyperbolicCollapse = Config.Bind("Hyperbleed 2", "Hyperbolic Collapse", false, "makes collapse hyperbolic (nerf). DISABLES COLLAPSE SETTING");
             LamerShatterspleen = Config.Bind("Hyperbleed 2", "Lamer Shatterspleen", true, "Shatterspleen adds crit chance to bleed chance instead of bleed doubleproccing.");
 
-            if (Mods("com.xoxfaby.BetterUI")) BetterUICompat();
+            // if (Mods("com.xoxfaby.BetterUI")) BetterUICompat();
             if (LaserScope.Value != 0) Crit.LaserScopeRework();
-            if (Mods("com.themysticsword.mysticsitems") && Moonglasses.Value != 0) Crit.MoonglassesRework();
+            // if (Mods("com.themysticsword.mysticsitems") && Moonglasses.Value != 0) Crit.MoonglassesRework();
 
             RecalculateStatsAPI.GetStatCoefficients += (self, args) =>
             {
@@ -200,6 +198,7 @@ namespace NotHypercrit
             return true;
         }
 
+        /*
         public static float GetCollapse(CharacterBody body)
         {
             return HyperbolicCollapse.Value ?
@@ -209,27 +208,35 @@ namespace NotHypercrit
 
         public static float GetWLuck(float orig, CharacterBody body)
         {
-            float chance = 100 * (int)orig + 100 * BetterUI.Utils.LuckCalc(orig % 1, body.master.luck);
+            float chance = 100 * (int)orig + 100 * LuckCalc(orig % 1, body.master.luck);
             if (chance > 0) chance += (body?.inventory?.GetItemCount(ItemCatalog.FindItemIndex("MysticsItems_ScratchTicket")) ?? 0);
             return chance;
         }
 
-        public static void BetterUICompat()
+        public static float LuckCalc(float chance, float luck)
         {
-            BetterUI.StatsDisplay.regexmap["$luckcrit"] = statBody => GetWLuck(statBody.crit / 100f, statBody).ToString("0.##");
-            BetterUI.StatsDisplay.regexmap.Add("$hypercrit", statBody => Crit.GetDamage(statBody.crit, statBody.critMultiplier - 2, statBody).ToString("0.##"));
-            BetterUI.StatsDisplay.regexmap.Add("$bleed", statBody => statBody.bleedChance.ToString("0.##"));
-            BetterUI.StatsDisplay.regexmap.Add("$collapse", statBody => (GetCollapse(statBody) * 100).ToString("0.##"));
-            BetterUI.StatsDisplay.regexmap.Add("$luckbleed", statBody => GetWLuck(statBody.bleedChance / 100f, statBody).ToString("0.##"));
-            BetterUI.StatsDisplay.regexmap.Add("$luckcollapse", statBody => GetWLuck(GetCollapse(statBody), statBody).ToString("0.##"));
-            BetterUI.StatsDisplay.regexmap.Add("$bleeddamage", statBody => statBody.GetBleedDamage().ToString("0.##"));
-            BetterUI.StatsDisplay.regexmap.Add("$collapsedamage", statBody => statBody.GetCollapseDamage().ToString("0.##"));
-            BetterUI.StatsDisplay.regexmap.Add("$hyperbleed", statBody => Bleed.GetDamage(statBody.bleedChance, statBody.GetBleedDamage() - 1, statBody).ToString("0.##"));
-            BetterUI.StatsDisplay.regexmap.Add("$hypercollapse", statBody => Bleed.GetDamage(GetCollapse(statBody) * 100, statBody.GetCollapseDamage() - 1, statBody).ToString("0.##"));
-            var sortedKeys = BetterUI.StatsDisplay.regexmap.Keys.ToList();
-            sortedKeys.Sort((s1, s2) => s2.Length - s1.Length);
-            BetterUI.StatsDisplay.regexpattern = new Regex(@"(\" + string.Join(@"|\", sortedKeys) + ")");
+            if (luck == 0f) return chance;
+            if (luck < 0f) return (int)chance + Mathf.Pow(chance % 1f, Math.Abs(luck) + 1f);
+            return (int)chance + (1f - Mathf.Pow(1f - chance % 1f, Math.Abs(luck) + 1f));
         }
+
+public static void BetterUICompat()
+{
+   BetterUI.StatsDisplay.regexmap["$luckcrit"] = statBody => GetWLuck(statBody.crit / 100f, statBody).ToString("0.##");
+   BetterUI.StatsDisplay.regexmap.Add("$hypercrit", statBody => Crit.GetDamage(statBody.crit, statBody.critMultiplier - 2, statBody).ToString("0.##"));
+   BetterUI.StatsDisplay.regexmap.Add("$bleed", statBody => statBody.bleedChance.ToString("0.##"));
+   BetterUI.StatsDisplay.regexmap.Add("$collapse", statBody => (GetCollapse(statBody) * 100).ToString("0.##"));
+   BetterUI.StatsDisplay.regexmap.Add("$luckbleed", statBody => GetWLuck(statBody.bleedChance / 100f, statBody).ToString("0.##"));
+   BetterUI.StatsDisplay.regexmap.Add("$luckcollapse", statBody => GetWLuck(GetCollapse(statBody), statBody).ToString("0.##"));
+   BetterUI.StatsDisplay.regexmap.Add("$bleeddamage", statBody => statBody.GetBleedDamage().ToString("0.##"));
+   BetterUI.StatsDisplay.regexmap.Add("$collapsedamage", statBody => statBody.GetCollapseDamage().ToString("0.##"));
+   BetterUI.StatsDisplay.regexmap.Add("$hyperbleed", statBody => Bleed.GetDamage(statBody.bleedChance, statBody.GetBleedDamage() - 1, statBody).ToString("0.##"));
+   BetterUI.StatsDisplay.regexmap.Add("$hypercollapse", statBody => Bleed.GetDamage(GetCollapse(statBody) * 100, statBody.GetCollapseDamage() - 1, statBody).ToString("0.##"));
+   var sortedKeys = BetterUI.StatsDisplay.regexmap.Keys.ToList();
+   sortedKeys.Sort((s1, s2) => s2.Length - s1.Length);
+   BetterUI.StatsDisplay.regexpattern = new Regex(@"(\" + string.Join(@"|\", sortedKeys) + ")");
+}
+*/
 
         public static float Calc(CritStackingMode mode, float init, float mult, float decay, float count)
         {

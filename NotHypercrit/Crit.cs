@@ -18,33 +18,31 @@ namespace NotHypercrit
         public static void Patch()
         {
             Main.Log.LogDebug("The Spirit of ThinkInvis Embraces You...");
-            IL.RoR2.HealthComponent.TakeDamage += (il) =>
+            IL.RoR2.HealthComponent.TakeDamageProcess += (il) =>
             {
                 ILCursor c = new(il);
                 int damageInfoIndex = -1;
-                if (c.TryGotoNext(MoveType.After,
+                c = c.GotoNext(MoveType.After,
                     x => x.MatchLdarg(out damageInfoIndex),
                     x => x.MatchLdfld<DamageInfo>(nameof(DamageInfo.crit)),
                     x => x.MatchBrfalse(out _),
                     x => x.MatchLdloc(out _),
                     x => x.MatchLdloc(1),
-                    x => x.MatchCallOrCallvirt<CharacterBody>("get_" + nameof(CharacterBody.critMultiplier))) && damageInfoIndex != -1)
+                    x => x.MatchCallOrCallvirt<CharacterBody>("get_" + nameof(CharacterBody.critMultiplier)));
+                c.Emit(OpCodes.Ldloc_1);
+                c.Emit(OpCodes.Ldarg_0);
+                c.Emit(OpCodes.Ldarg, damageInfoIndex);
+                c.EmitDelegate<Func<float, CharacterBody, HealthComponent, DamageInfo, float>>((orig, self, self2, info) =>
                 {
-                    c.Emit(OpCodes.Ldloc_1);
-                    c.Emit(OpCodes.Ldarg_0);
-                    c.Emit(OpCodes.Ldarg, damageInfoIndex);
-                    c.EmitDelegate<Func<float, CharacterBody, HealthComponent, DamageInfo, float>>((orig, self, self2, info) =>
+                    if (!self) return orig;
+                    Main.AdditionalProcInfo aci = null;
+                    if (!critInfoAttachments.TryGetValue(info, out aci))
                     {
-                        if (!self) return orig;
-                        Main.AdditionalProcInfo aci = null;
-                        if (!critInfoAttachments.TryGetValue(info, out aci))
-                        {
-                            aci = RollHypercrit(orig - 2f, self, self2.body);
-                            critInfoAttachments.Add(info, aci);
-                        }
-                        return Mathf.Max(orig, aci.damageMult); // jank 2, thanks railr
-                    });
-                }
+                        aci = RollHypercrit(orig - 2f, self, self2.body);
+                        critInfoAttachments.Add(info, aci);
+                    }
+                    return Mathf.Max(orig, aci.damageMult); // jank 2, thanks railr
+                });
             };
             IL.RoR2.HealthComponent.SendDamageDealt += (il) => {
                 var c = new ILCursor(il);
@@ -152,6 +150,7 @@ namespace NotHypercrit
             };
         }
 
+        /*
         public static void MoonglassesRework()
         {
             if (MysticsItems.ConfigManager.General.disabledItems.Keys.Any(x => ItemCatalog.GetItemDef(x).name == "MysticsItems_Moonglasses")) return;
@@ -184,6 +183,7 @@ namespace NotHypercrit
                 .Replace("{CritDamageIncrease}", MysticsItems.Items.Moonglasses.critDamageIncrease.ToString())
                 .Replace("{CritDamageIncreasePerStack}", MysticsItems.Items.Moonglasses.critDamageIncreasePerStack.ToString()));
         }
+    */
 
         //for mod interop
         public static bool TryGetHypercrit(object target, ref Main.AdditionalProcInfo aci)
@@ -212,7 +212,7 @@ namespace NotHypercrit
             {
                 aci.totalChance = body.crit;
                 float effectiveCount = GetEffectiveCount(body.crit, body);
-                if (body2 != null && Main.Mods("com.TeamMoonstorm.Starstorm2-Nightly") && NeedlesCompat(body2)) effectiveCount++;
+                // if (body2 != null && Main.Mods("com.TeamMoonstorm.Starstorm2-Nightly") && NeedlesCompat(body2)) effectiveCount++;
                 aci.num = Main.CritFraction.Value ? (Mathf.FloorToInt(effectiveCount) + (Util.CheckRoll(effectiveCount % 1f * 100, body.master) ? 1 : 0)) : (int)effectiveCount;
                 if (aci.num == 0) aci.damageMult = 1f;
                 else aci.damageMult = Main.Calc(
@@ -263,10 +263,11 @@ namespace NotHypercrit
             if (!Main.CritFraction.Value) return Mathf.FloorToInt(ret) + (Util.CheckRoll(ret % 1f * 100, body.master) ? 1 : 0);
             return ret;
         }
-
+        /*
         public static bool NeedlesCompat(CharacterBody body)
         {
             return body.HasBuff(Moonstorm.Starstorm2.SS2Content.Buffs.BuffNeedle);
         }
+        */
     }
 }

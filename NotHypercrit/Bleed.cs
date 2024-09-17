@@ -69,48 +69,40 @@ namespace NotHypercrit
             Run.onRunStartGlobal += (run) => bleedDamage.Clear();
             On.RoR2.CharacterBody.Start += (orig, self) => { self.GetBleedDamage(); self.GetCollapseDamage(); orig(self); }; // initialize bleed damage so recalcs can use it
             RecalculateStatsAPI.GetStatCoefficients += (self, args) => { bleedDamage[self] = 1; collapseDamage[self] = 1; }; // ones that uses bleeddamage would have hypercrit2 as softdep so
-            IL.RoR2.GlobalEventManager.OnHitEnemy += (il) =>
+            IL.RoR2.GlobalEventManager.ProcessHitEnemy += (il) =>
             {
                 ILCursor c = new(il);
                 int damageInfoIndex = -1;
-                if (
-                    Main.BleedEnable.Value &&
-                    c.TryGotoNext(x => x.MatchCallOrCallvirt<CharacterBody>("get_" + nameof(CharacterBody.bleedChance))) &&
-                    c.TryGotoNext(x => x.MatchLdcI4((int)ProcType.BleedOnHit)) &&
-                    c.TryGotoNext(MoveType.After, x => x.MatchCallOrCallvirt<ProcChainMask>(nameof(ProcChainMask.AddProc)))
-                )
+                if (!Main.BleedEnable.Value) return;
+                c.GotoNext(x => x.MatchCallOrCallvirt<CharacterBody>("get_" + nameof(CharacterBody.bleedChance)));
+                c.GotoNext(x => x.MatchLdcI4((int)ProcType.BleedOnHit));
+                c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt<ProcChainMask>(nameof(ProcChainMask.AddProc)));
+                c.Emit(OpCodes.Ldarg_1);
+                c.EmitDelegate<Action<DamageInfo>>((info) =>
                 {
-                    c.Emit(OpCodes.Ldarg_1);
-                    c.EmitDelegate<Action<DamageInfo>>((info) =>
+                    if (info.attacker)
                     {
-                        if (info.attacker)
-                        {
-                            CharacterBody self = info.attacker.GetComponent<CharacterBody>();
-                            if (!self) return;
-                            InflictHyperbleedInfo aci = RollHyperbleed(DotController.DotIndex.Bleed, self.GetBleedDamage() - 1f, self);
-                            inflictHyperBleedInfos.Add(aci);
-                        }
-                    });
-                }
-                if (
-                    Main.CollapseEnable.Value &&
-                    c.TryGotoNext(x => x.MatchLdsfld(typeof(DLC1Content.Items), nameof(DLC1Content.Items.BleedOnHitVoid))) &&
-                    c.TryGotoNext(x => x.MatchLdcI4((int)ProcType.FractureOnHit)) &&
-                    c.TryGotoNext(MoveType.After, x => x.MatchCallOrCallvirt<ProcChainMask>(nameof(ProcChainMask.AddProc)))
-                )
+                        CharacterBody self = info.attacker.GetComponent<CharacterBody>();
+                        if (!self) return;
+                        InflictHyperbleedInfo aci = RollHyperbleed(DotController.DotIndex.Bleed, self.GetBleedDamage() - 1f, self);
+                        inflictHyperBleedInfos.Add(aci);
+                    }
+                });
+                if (!Main.CollapseEnable.Value) return;
+                c.GotoNext(x => x.MatchLdsfld(typeof(DLC1Content.Items), nameof(DLC1Content.Items.BleedOnHitVoid)));
+                c.GotoNext(x => x.MatchLdcI4((int)ProcType.FractureOnHit));
+                c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt<ProcChainMask>(nameof(ProcChainMask.AddProc)));
+                c.Emit(OpCodes.Ldarg, 1);
+                c.EmitDelegate<Action<DamageInfo>>((info) =>
                 {
-                    c.Emit(OpCodes.Ldarg, 1);
-                    c.EmitDelegate<Action<DamageInfo>>((info) =>
+                    if (info.attacker)
                     {
-                        if (info.attacker)
-                        {
-                            CharacterBody self = info.attacker.GetComponent<CharacterBody>();
-                            if (!self) return;
-                            InflictHyperbleedInfo aci = RollHyperbleed(DotController.DotIndex.Fracture, self.GetCollapseDamage() - 1f, self);
-                            inflictHyperBleedInfos.Add(aci);
-                        }
-                    });
-                }
+                        CharacterBody self = info.attacker.GetComponent<CharacterBody>();
+                        if (!self) return;
+                        InflictHyperbleedInfo aci = RollHyperbleed(DotController.DotIndex.Fracture, self.GetCollapseDamage() - 1f, self);
+                        inflictHyperBleedInfos.Add(aci);
+                    }
+                });
             };
             IL.RoR2.DotController.InflictDot_refInflictDotInfo += (il) =>
             {
@@ -203,7 +195,7 @@ namespace NotHypercrit
             };
             if (Main.LamerShatterspleen.Value)
             {
-                IL.RoR2.GlobalEventManager.OnHitEnemy += (il) =>
+                IL.RoR2.GlobalEventManager.ProcessHitEnemy += (il) =>
                 {
                     ILCursor c = new(il);
                     c.GotoNext(x => x.MatchLdsfld(typeof(RoR2Content.Items), nameof(RoR2Content.Items.BleedOnHitAndExplode)), x => x.MatchCallOrCallvirt<Inventory>(nameof(Inventory.GetItemCount)));
@@ -229,7 +221,7 @@ namespace NotHypercrit
                 if (Main.LamerShatterspleen.Value && self.inventory.GetItemCount(RoR2Content.Items.BleedOnHitAndExplode) > 0) self.bleedChance += self.crit;
                 if (Main.HyperbolicBleed.Value) self.bleedChance = 100f - (10000f / (100f + (1.111111f * self.bleedChance)));
             };
-            if (Main.HyperbolicCollapse.Value) IL.RoR2.GlobalEventManager.OnHitEnemy += (il) =>
+            if (Main.HyperbolicCollapse.Value) IL.RoR2.GlobalEventManager.ProcessHitEnemy += (il) =>
             {
                 ILCursor c = new(il);
                 c.GotoNext(x => x.MatchLdloc(24), x => x.MatchConvR4());

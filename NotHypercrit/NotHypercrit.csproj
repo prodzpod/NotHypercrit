@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>netstandard2.0</TargetFramework>
+		<TargetFramework>netstandard2.1</TargetFramework>
 		<LangVersion>preview</LangVersion>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
@@ -18,9 +18,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Reference Include="BetterUI">
-	    <HintPath>..\..\libs\BetterUI-nstrip.dll</HintPath>
-	  </Reference>
 	  <Reference Include="com.unity.multiplayer-hlapi.Runtime">
 	    <HintPath>..\..\libs\com.unity.multiplayer-hlapi.Runtime-nstrip.dll</HintPath>
 	  </Reference>
@@ -32,12 +29,6 @@
 	  </Reference>
 	  <Reference Include="MMHOOK_RoR2">
 	    <HintPath>..\..\libs\MMHOOK_RoR2-nstrip.dll</HintPath>
-	  </Reference>
-	  <Reference Include="MysticsItemsPlugin">
-	    <HintPath>..\..\libs\MysticsItemsPlugin-nstrip.dll</HintPath>
-	  </Reference>
-	  <Reference Include="MysticsRisky2Utils">
-	    <HintPath>..\..\libs\MysticsRisky2Utils-nstrip.dll</HintPath>
 	  </Reference>
 	  <Reference Include="R2API.Core">
 	    <HintPath>..\..\libs\R2API.Core-nstrip.dll</HintPath>
@@ -56,9 +47,6 @@
 	  </Reference>
 	  <Reference Include="RoR2BepInExPack">
 	    <HintPath>..\..\libs\RoR2BepInExPack-nstrip.dll</HintPath>
-	  </Reference>
-	  <Reference Include="Starstorm2">
-	    <HintPath>..\..\libs\Starstorm2-nstrip.dll</HintPath>
 	  </Reference>
 	  <Reference Include="UnityEngine">
 	    <HintPath>..\..\libs\UnityEngine-nstrip.dll</HintPath>
