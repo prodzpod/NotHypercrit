@@ -7,6 +7,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
+using BepInEx.Bootstrap;
 
 namespace NotHypercrit
 {
@@ -198,7 +199,7 @@ namespace NotHypercrit
                 IL.RoR2.GlobalEventManager.ProcessHitEnemy += (il) =>
                 {
                     ILCursor c = new(il);
-                    c.GotoNext(x => x.MatchLdsfld(typeof(RoR2Content.Items), nameof(RoR2Content.Items.BleedOnHitAndExplode)), x => x.MatchCallOrCallvirt<Inventory>(nameof(Inventory.GetItemCount)));
+                    if (!c.TryGotoNext(x => x.MatchLdsfld(typeof(RoR2Content.Items), nameof(RoR2Content.Items.BleedOnHitAndExplode)), x => x.MatchCallOrCallvirt<Inventory>(nameof(Inventory.GetItemCount)))) return;
                     c.Index += 2;
                     c.Emit(OpCodes.Pop);
                     c.Emit(OpCodes.Ldc_I4, 0);

@@ -18,12 +18,13 @@ namespace NotHypercrit
     [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod)]
     [BepInDependency("Hayaku.VanillaRebalance", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("droppod.lookingglass", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("com.themysticsword.mysticsitems", BepInDependency.DependencyFlags.SoftDependency)]
     public class Main : BaseUnityPlugin
     {
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "prodzpod";
         public const string PluginName = "Hypercrit2";
-        public const string PluginVersion = "1.2.6";
+        public const string PluginVersion = "1.3.0";
         public static ManualLogSource Log;
         internal static PluginInfo pluginInfo;
         public static ConfigFile Config;
@@ -47,6 +48,9 @@ namespace NotHypercrit
 
         public static ConfigEntry<bool> Flurry;
         public static ConfigEntry<float> LaserScope;
+        public static ConfigEntry<float> LaserScopeStack;
+        public static ConfigEntry<float> LaserScopeDamage;
+        public static ConfigEntry<float> LaserScopeDamageStack;
         public static ConfigEntry<float> Moonglasses;
 
         public static ConfigEntry<float> BaseBleedChance;
@@ -133,8 +137,11 @@ namespace NotHypercrit
             CritColor = Config.Bind("Hypercrit 2", "Color Cycle", 12, "Set to 1 to disable color change");
 
             Flurry = Config.Bind("Hypercrit 2", "Procs Affects Flurry", true, "yeah!!");
-            LaserScope = Config.Bind("Hypercrit 2", "Laser Scope Crit on First Stack", 25f, "Gives crit chance on first stack, like other crit synergy items.");
-            // Moonglasses = Config.Bind("Hypercrit 2", "Moonglasses Rework", 50f, "makes it so moonglasses reduces crit chance. actual downside?? set to 0 to disable.");
+            LaserScope = Config.Bind("Hypercrit 2", "Laser Scope Crit Chance on First Stack", 25f, "Gives crit chance on first stack, like other crit synergy items.");
+            LaserScopeStack = Config.Bind("Hypercrit 2", "Laser Scope Crit Chance on Subsequent Stack", 0f, "Gives crit chance on first stack, like other crit synergy items.");
+            LaserScopeDamage = Config.Bind("Hypercrit 2", "Laser Scope Crit Damage on First Stack", 100f, "Gives crit chance on first stack, like other crit synergy items.");
+            LaserScopeDamageStack = Config.Bind("Hypercrit 2", "Laser Scope Crit Damage on Subsequent Stack", 100f, "Gives crit chance on first stack, like other crit synergy items.");
+            Moonglasses = Config.Bind("Hypercrit 2", "Moonglasses Rework", 50f, "makes it so moonglasses reduces crit chance. actual downside?? set to 0 to disable.");
 
             BaseBleedChance = Config.Bind("Hyperbleed 2", "Base Bleed Chance", 0f, "Bleed chance every survivors start with.");
             BleedEnable = Config.Bind("Hyperbleed 2", "Enable", true, "Enables hyperbleed.");
@@ -179,7 +186,7 @@ namespace NotHypercrit
 
             if (Mods("droppod.lookingglass")) LookingGlassCompat();
             if (LaserScope.Value != 0) Crit.LaserScopeRework();
-            // if (Mods("com.themysticsword.mysticsitems") && Moonglasses.Value != 0) Crit.MoonglassesRework();
+            if (Mods("com.themysticsword.mysticsitems") && Moonglasses.Value != 0) Crit.MoonglassesRework();
 
             RecalculateStatsAPI.GetStatCoefficients += (self, args) =>
             {

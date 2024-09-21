@@ -141,16 +141,28 @@ namespace NotHypercrit
             RecalculateStatsAPI.GetStatCoefficients += (self, args) =>
             {
                 if (self == null || self.inventory == null) return;
-                if (self.inventory.GetItemCount(DLC1Content.Items.CritDamage) > 0) args.critAdd += Main.LaserScope.Value;
+                var count = self.inventory.GetItemCount(DLC1Content.Items.CritDamage);
+                if (count > 0)
+                {
+                    args.critDamageMultAdd += (Main.LaserScopeDamage.Value + ((count - 1) * Main.LaserScopeDamageStack.Value)) / 100f - count;
+                    args.critAdd += Main.LaserScope.Value + ((count - 1) * Main.LaserScopeStack.Value);
+                }
             };
             On.RoR2.Language.GetLocalizedStringByToken += (orig, self, token) =>
             {
-                if (token == "ITEM_CRITDAMAGE_DESC") return $"Gain <style=cIsDamage>{Main.LaserScope.Value}% critical chance</style>. " + orig(self, token);
+                if (token == "ITEM_CRITDAMAGE_DESC") return
+                    ((Main.LaserScope.Value != 0 || Main.LaserScopeStack.Value != 0) ? $"Gain {s(Main.LaserScope.Value, Main.LaserScopeStack.Value, f => f + "%")} chance to <style=cIsDamage>Critically Strike</style>. " : "") +
+                    ((Main.LaserScopeDamage.Value != 0 || Main.LaserScopeDamageStack.Value != 0) ? $"<style=cIsDamage>Critical Strikes</style> deal an additional {s(Main.LaserScopeDamage.Value, Main.LaserScopeDamageStack.Value, f => f + "%")}." : "");
                 else return orig(self, token);
             };
+            static string s(float first, float stack, Func<float, string> fn)
+            {
+                var txt = $"<style=cIsDamage>{fn(first)}</style>";
+                if (stack != 0) txt += $"<style=cStack>({(stack > 0 ? "+" : "-")}{fn(stack)} per stack)</style>";
+                return txt;
+            }
         }
 
-        /*
         public static void MoonglassesRework()
         {
             if (MysticsItems.ConfigManager.General.disabledItems.Keys.Any(x => ItemCatalog.GetItemDef(x).name == "MysticsItems_Moonglasses")) return;
@@ -183,7 +195,6 @@ namespace NotHypercrit
                 .Replace("{CritDamageIncrease}", MysticsItems.Items.Moonglasses.critDamageIncrease.ToString())
                 .Replace("{CritDamageIncreasePerStack}", MysticsItems.Items.Moonglasses.critDamageIncreasePerStack.ToString()));
         }
-    */
 
         //for mod interop
         public static bool TryGetHypercrit(object target, ref Main.AdditionalProcInfo aci)

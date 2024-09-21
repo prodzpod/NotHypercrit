@@ -33,6 +33,12 @@
 	  <Reference Include="MMHOOK_RoR2">
 	    <HintPath>..\..\libs\MMHOOK_RoR2-nstrip.dll</HintPath>
 	  </Reference>
+	  <Reference Include="MysticsItemsPlugin">
+	    <HintPath>..\..\libs\MysticsItemsPlugin-nstrip.dll</HintPath>
+	  </Reference>
+	  <Reference Include="MysticsRisky2Utils">
+	    <HintPath>..\..\libs\MysticsRisky2Utils-nstrip.dll</HintPath>
+	  </Reference>
 	  <Reference Include="R2API.Core">
 	    <HintPath>..\..\libs\R2API.Core-nstrip.dll</HintPath>
 	  </Reference>
