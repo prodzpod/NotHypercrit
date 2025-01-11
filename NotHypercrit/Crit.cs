@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using HarmonyLib;
+using UnityEngine.Networking;
 
 namespace NotHypercrit
 {
@@ -15,30 +16,29 @@ namespace NotHypercrit
     {
         public static ConditionalWeakTable<object, Main.AdditionalProcInfo> critInfoAttachments = new ConditionalWeakTable<object, Main.AdditionalProcInfo>();
         public static Main.AdditionalProcInfo lastNetworkedCritInfo = null;
+        public static DamageInfo info;
         public static void Patch()
         {
             Main.Log.LogDebug("The Spirit of ThinkInvis Embraces You...");
             IL.RoR2.HealthComponent.TakeDamageProcess += (il) =>
             {
                 ILCursor c = new(il);
-                int damageInfoIndex = -1;
-                c = c.GotoNext(MoveType.After,
-                    x => x.MatchLdarg(out damageInfoIndex),
+                c.GotoNext(
                     x => x.MatchLdfld<DamageInfo>(nameof(DamageInfo.crit)),
-                    x => x.MatchBrfalse(out _),
-                    x => x.MatchLdloc(out _),
-                    x => x.MatchLdloc(1),
-                    x => x.MatchCallOrCallvirt<CharacterBody>("get_" + nameof(CharacterBody.critMultiplier)));
-                c.Emit(OpCodes.Ldloc_1);
+                    x => x.MatchBrfalse(out _));
+                c.EmitDelegate<Func<DamageInfo, DamageInfo>>(x => { info = x; return x; });
+                c.GotoNext(MoveType.After, x => x.MatchCallOrCallvirt<CharacterBody>("get_" + nameof(CharacterBody.critMultiplier)));
                 c.Emit(OpCodes.Ldarg_0);
-                c.Emit(OpCodes.Ldarg, damageInfoIndex);
-                c.EmitDelegate<Func<float, CharacterBody, HealthComponent, DamageInfo, float>>((orig, self, self2, info) =>
+                c.Emit(OpCodes.Ldarg_1);
+                c.EmitDelegate<Func<float, HealthComponent, DamageInfo, float>>((orig, self, info) =>
                 {
                     if (!self) return orig;
+                    var body = info.attacker.GetComponent<CharacterBody>();
+                    if (!body) return orig;
                     Main.AdditionalProcInfo aci = null;
                     if (!critInfoAttachments.TryGetValue(info, out aci))
                     {
-                        aci = RollHypercrit(orig - 2f, self, self2.body);
+                        aci = RollHypercrit(orig - 2f, body);
                         critInfoAttachments.Add(info, aci);
                     }
                     return Mathf.Max(orig, aci.damageMult); // jank 2, thanks railr
@@ -46,9 +46,10 @@ namespace NotHypercrit
             };
             IL.RoR2.HealthComponent.SendDamageDealt += (il) => {
                 var c = new ILCursor(il);
-                c.GotoNext(MoveType.After,
-                    x => x.MatchNewobj<DamageDealtMessage>());
-                c.Emit(OpCodes.Dup);
+                var message = -1;
+                c.GotoNext(x => x.MatchLdloc(out message), x => x.MatchCallOrCallvirt<NetworkServer>(nameof(NetworkServer.SendToAll)));
+                c.Index++;
+                c.Emit(OpCodes.Ldloc, message);
                 c.Emit(OpCodes.Ldarg_0);
                 c.EmitDelegate<Action<DamageDealtMessage, DamageReport>>((msg, report) => {
                     TryPassHypercrit(report.damageInfo, msg);
@@ -216,7 +217,7 @@ namespace NotHypercrit
             return retv;
         }
 
-        public static Main.AdditionalProcInfo RollHypercrit(float damage, CharacterBody body, CharacterBody body2 = null)
+        public static Main.AdditionalProcInfo RollHypercrit(float damage, CharacterBody body)
         {
             var aci = new Main.AdditionalProcInfo();
             if (body)

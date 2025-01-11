@@ -36,6 +36,7 @@ also I did get permission from mystic btw
 ![Image](https://raw.githubusercontent.com/prodzpod/NotHypercrit/master/1.png)
 
 ## Changelog
+- 1.3.1: thank @diegowde for this 1
 - 1.3.0: riskymod compat fix, mysticitems compat fix, added more laser scope configs
 - 1.2.9: the compat is reforged (mysticitems)
 - 1.2.8: the compat is reforged
