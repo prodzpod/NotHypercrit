@@ -24,7 +24,7 @@ namespace NotHypercrit
         public const string PluginGUID = PluginAuthor + "." + PluginName;
         public const string PluginAuthor = "prodzpod";
         public const string PluginName = "Hypercrit2";
-        public const string PluginVersion = "1.3.1";
+        public const string PluginVersion = "1.3.2";
         public static ManualLogSource Log;
         internal static PluginInfo pluginInfo;
         public static ConfigFile Config;
@@ -106,10 +106,12 @@ namespace NotHypercrit
                 num = reader.ReadInt32();
                 numProcs = reader.ReadInt32();
                 damageMult = reader.ReadSingle();
+                /* leaving this for historical reasons
                 foreach (var def in ItemCatalog.allItemDefs)
                     Debug.Log($"{Language.GetString(def.nameToken)} ({def.tier}): {Language.GetString(def.descriptionToken)}");
                 foreach (var def in EquipmentCatalog.equipmentDefs)
                     Debug.Log($"{Language.GetString(def.nameToken)} ({(def.isLunar ? "LunarEquipment" : "Equipment")}): {Language.GetString(def.descriptionToken)}");
+                */
             }
             public void Serialize(NetworkWriter writer)
             {
