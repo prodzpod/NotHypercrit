@@ -127,16 +127,6 @@ namespace NotHypercrit
             }
         }
 
-        public static void PatchHyperbolic()
-        {
-            On.RoR2.CharacterBody.RecalculateStats += (orig, self) =>
-            {
-                orig(self);
-                if (self == null || self.inventory == null) return;
-                if (Main.HyperbolicCrit.Value) self.crit = 100f - (10000f / (100f + (1.111111f * self.crit)));
-            };
-        }
-
         public static void LaserScopeRework()
         {
             RecalculateStatsAPI.GetStatCoefficients += (self, args) =>
@@ -225,20 +215,18 @@ namespace NotHypercrit
                 aci.totalChance = body.crit;
                 float effectiveCount = GetEffectiveCount(body.crit, body);
                 // if (body2 != null && Main.Mods("com.TeamMoonstorm.Starstorm2-Nightly") && NeedlesCompat(body2)) effectiveCount++;
-                aci.num = Main.CritFraction.Value ? (Mathf.FloorToInt(effectiveCount) + (Util.CheckRoll(effectiveCount % 1f * 100, body.master) ? 1 : 0)) : (int)effectiveCount;
+                aci.num = (int)effectiveCount;
                 if (aci.num == 0) aci.damageMult = 1f;
-                else aci.damageMult = Main.Calc(
+                else aci.damageMult = (1 + damage) * Main.Calc(
                     Main.CritMode.Value, 
-                    Main.CritBase.Value + damage, 
-                    Main.CritMult.Value + (Main.CritDamageBonus.Value ? damage : 0), 
-                    Main.CritDecay.Value, 
+                    Main.CritA.Value, 
+                    Main.CritB.Value, 
                     effectiveCount);
                 float proc = 0;
                 if (aci.num != 0) proc = Main.Calc(
                     Main.CritProcMode.Value, 
-                    Main.CritProcBase.Value, 
-                    Main.CritProcMult.Value, 
-                    Main.CritProcDecay.Value, 
+                    Main.CritProcA.Value, 
+                    Main.CritProcB.Value, 
                     effectiveCount);
                 aci.numProcs = (int)proc + (Util.CheckRoll(proc % 1 * 100) ? 1 : 0);
             }
@@ -247,33 +235,24 @@ namespace NotHypercrit
 
         public static float GetDamage(float chance, float damage, CharacterBody body)
         {
-            return Main.Calc(
+            return (1 + damage) * Main.Calc(
                 Main.CritMode.Value, 
-                Main.CritBase.Value + damage, 
-                Main.CritMult.Value + (Main.CritDamageBonus.Value ? damage : 0), 
-                Main.CritDecay.Value, 
+                Main.CritA.Value,
+                Main.CritB.Value,
                 Mathf.Max(1, GetEffectiveCount(chance + (100 - (chance % 100f)), body)));
         }
 
         public static float GetEffectiveCount(Main.AdditionalProcInfo aci)
         {
-            if (Main.CritFraction.Value)
-            {
-                float ret = aci.totalChance / 100f;
-                if (ret < 1) ret = 0;
-                return ret;
-            }
-            else return aci.num;
+            return aci.num;
         }
 
         public static float GetEffectiveCount(float chance, CharacterBody body, bool forceSingleCrit = false)
         {
             float ret = Mathf.Max(0, (chance - (forceSingleCrit ? 100 : 0)) / 100f);
             if (Main.CritCap.Value >= 0) ret = Mathf.Min(ret, Main.CritCap.Value);
-            if (Main.CritFraction.Value && Main.Mods("com.themysticsword.mysticsitems") && body?.inventory != null && ret > 0) ret += 0.01f * body.inventory.GetItemCount(ItemCatalog.FindItemIndex("MysticsItems_ScratchTicket"));
             if (ret <= 0) return 0;
-            if (!Main.CritFraction.Value) return Mathf.FloorToInt(ret) + (Util.CheckRoll(ret % 1f * 100, body.master) ? 1 : 0);
-            return ret;
+            return Main.CalcChance(Main.CritChance.Value, ret, body.master.luck);
         }
         /*
         public static bool NeedlesCompat(CharacterBody body)
